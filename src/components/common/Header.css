@@ -1,0 +1,81 @@
+/* General styles for the header */
+.header {
+  background-color: #007bff; /* Màu xanh dương đậm hơn */
+  padding: 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Thêm bóng đổ */
+}
+
+.logo h1 {
+  font-size: 2rem;
+  color: white;
+  margin: 0;
+}
+
+.logo p {
+  font-size: 1rem;
+  color: #ffeb3b; /* Màu vàng cho đoạn mô tả nhỏ */
+  margin-top: 5px;
+}
+
+/* Navbar styles */
+.navbar ul {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar ul li {
+  margin: 0 15px;
+}
+
+.navbar ul li a {
+  color: white;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+
+/* Hover effect on links */
+.navbar ul li a:hover {
+  color: #ffeb3b; /* Đổi sang màu vàng khi hover */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Thêm bóng khi hover */
+}
+
+/* Styles for auth buttons */
+.auth-buttons {
+  display: flex;
+}
+
+.login-button,
+.register-button {
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-weight: bold;
+  color: white;
+  text-decoration: none;
+  margin-left: 10px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.login-button {
+  background-color: #28a745; /* Màu xanh lá cho đăng nhập */
+}
+
+.register-button {
+  background-color: #c61426; /* Màu đỏ cho đăng ký */
+}
+
+.login-button:hover {
+  background-color: #882121; /* Màu xanh lá đậm hơn khi hover */
+  transform: scale(1.05); /* Tăng kích thước nhẹ khi hover */
+}
+
+.register-button:hover {
+  background-color: #c82333; /* Màu đỏ đậm hơn khi hover */
+  transform: scale(1.05);
+}
