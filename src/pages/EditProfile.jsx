@@ -1,6 +1,6 @@
 // src/pages/EditProfile.jsx
 import React, { useState, useEffect } from "react";
-import { updateUser } from "../api/auth"; // Hàm API để cập nhật thông tin người dùng
+import { updateUser } from "../api/auth"; 
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import {
@@ -14,7 +14,7 @@ import {
   MessageText,
   Card,
   Icon,
-} from "./EditProfileStyled"; // Tái sử dụng các styled-components từ ProfileStyled.js
+} from "./EditProfileStyled"; 
 
 const EditProfile = () => {
   const { user, token, login } = useAuth();
@@ -47,24 +47,23 @@ const EditProfile = () => {
     setMessage("");
   };
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Ngăn chặn reload trang
+    e.preventDefault(); 
 
-    setLoading(true); // Hiển thị trạng thái đang tải
-    console.log("Submitting form data:", formData); // Log dữ liệu
-
+    setLoading(true);
+    console.log("Submitting form data:", formData); 
     try {
       const updatedUser = await updateUser(user.id, { ...formData }, token);
-      console.log("Updated user response:", updatedUser); // Log phản hồi từ API
+      console.log("Updated user response:", updatedUser); 
 
-      await login({ token, ...updatedUser.data }); // Cập nhật thông tin người dùng
-      console.log("User logged in:", updatedUser.data); // Log thông tin người dùng
+      await login({ token, ...updatedUser.data }); 
+      console.log("User logged in:", updatedUser.data);
 
-      navigate("/profile", { state: { updated: true } }); // Chuyển hướng về trang Profile
+      navigate("/profile", { state: { updated: true } }); 
     } catch (err) {
-      console.error("Error during update:", err); // Log lỗi
+      console.error("Error during update:", err); 
       setError("Đã xảy ra lỗi khi cập nhật thông tin. Vui lòng thử lại.");
     } finally {
-      setLoading(false); // Kết thúc trạng thái tải
+      setLoading(false); 
     }
   };
 

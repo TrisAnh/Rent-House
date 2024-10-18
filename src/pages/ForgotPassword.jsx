@@ -62,7 +62,7 @@ const ForgotPassword = () => {
     try {
       await sendOtp(email);
       setMessage("OTP đã được gửi tới email của bạn.");
-      setStep(2); // Chuyển sang bước 2
+      setStep(2);
     } catch (err) {
       setError("Gửi OTP thất bại. Vui lòng kiểm tra lại email.");
       console.error("Gửi OTP lỗi:", err);
