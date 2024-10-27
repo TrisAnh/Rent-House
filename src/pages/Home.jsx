@@ -30,6 +30,7 @@ import {
   ContactInfo,
   ContactItem,
 } from "./HomeStyled";
+import { Link } from "react-router-dom";
 const Home = () => {
   const [featuredProperties, setFeaturedProperties] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
@@ -49,6 +50,7 @@ const Home = () => {
       try {
         const response = await postTopView();
         setFeaturedProperties(response.data);
+        console.log("Featured Properties:", response.data);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -66,6 +68,7 @@ const Home = () => {
       const response = await searchPost(searchParams);
       console.log("Kết quả tìm kiếm:", response.data);
       setSearchResults(response.data); // Cập nhật danh sách kết quả tìm kiếm
+      console.log("Kết quả tìm kiếm:", setSearchResults);
     } catch (error) {
       console.error("Lỗi tìm kiếm:", error);
     } finally {
@@ -99,7 +102,6 @@ const Home = () => {
         </BannerContent>
       </Banner>
 
-      {/* Thanh tìm kiếm */}
       <SearchForm onSubmit={handleSearchSubmit}>
         <SearchInput
           type="text"
@@ -121,9 +123,10 @@ const Home = () => {
           onChange={handleSearchChange}
         >
           <option value="">Chọn loại phòng</option>
-          <option value="single">Phòng đơn</option>
-          <option value="double">Phòng đôi</option>
-          <option value="suite">Suite</option>
+          <option value="Single">Phòng đơn</option>
+          <option value="Shared">Phòng chia sẻ</option>
+          <option value="Apartment">Căn hộ</option>
+          <option value="Dormitory">Ký túc xá</option>
         </SearchSelect>
         <SearchInput
           type="number"
@@ -143,13 +146,63 @@ const Home = () => {
           <FaSearch />
         </SearchButton>
       </SearchForm>
-
+      {/* Kết quả tìm kiếm */}
+      {searchResults.length > 0 && (
+        <div>
+          <SectionTitle>Kết quả tìm kiếm</SectionTitle>
+          <PropertiesGrid>
+            {searchResults.map((property) => (
+              <PropertyCard key={property._id}>
+                <Link to={`/listings/${property._id}`}>
+                  <PropertyImage
+                    src={property.images[0]}
+                    alt={property.title}
+                  />
+                </Link>
+                <PropertyInfo>
+                  <PropertyTitle>{property.title}</PropertyTitle>
+                  <PropertyLocation>
+                    <FaMapMarkerAlt /> {property.location.address},{" "}
+                    {property.location.city}, {property.location.district},{" "}
+                    {property.location.ward}
+                  </PropertyLocation>
+                  <PropertyPrice>
+                    {property.price.toLocaleString()} VND
+                  </PropertyPrice>
+                  <PropertyRating>{property.averageRating} ⭐</PropertyRating>
+                  <PropertyDetails>
+                    <PropertyAmenities>
+                      {property.amenities.hasWifi && <Amenity>Wifi</Amenity>}
+                      {property.amenities.hasAirConditioner && (
+                        <Amenity>Điều hòa</Amenity>
+                      )}
+                      {property.amenities.hasKitchen && <Amenity>Bếp</Amenity>}
+                      {property.amenities.hasParking && (
+                        <Amenity>Chỗ đậu xe</Amenity>
+                      )}
+                    </PropertyAmenities>
+                  </PropertyDetails>
+                </PropertyInfo>
+              </PropertyCard>
+            ))}
+          </PropertiesGrid>
+        </div>
+      )}
       <FeaturedSection>
         <SectionTitle>Nhà trọ nổi bật</SectionTitle>
         <PropertiesGrid>
           {featuredProperties.map((property) => (
-            <PropertyCard key={property.id}>
-              <PropertyImage src={property.images[0]} alt={property.title} />
+            <PropertyCard key={property._id}>
+              {" "}
+              {/* Sử dụng _id để đảm bảo tính duy nhất */}
+              <Link
+                to={`/listings/${property._id}`}
+                onClick={() => {
+                  console.log(`Clicked property ID: ${property._id}`);
+                }}
+              >
+                <PropertyImage src={property.images[0]} alt={property.title} />
+              </Link>
               <PropertyInfo>
                 <PropertyTitle>{property.title}</PropertyTitle>
                 <PropertyLocation>
@@ -157,16 +210,18 @@ const Home = () => {
                   {property.location.city}, {property.location.district},{" "}
                   {property.location.ward}
                 </PropertyLocation>
-                <PropertyPrice>{property.price}</PropertyPrice>
+                <PropertyPrice>
+                  {property.price.toLocaleString()} VND
+                </PropertyPrice>
                 <PropertyRating>{property.averageRating} ⭐</PropertyRating>
                 <PropertyDetails>
                   <PropertyAmenities>
-                    {property.amenities.wifi && <Amenity>Wifi</Amenity>}
-                    {property.amenities.airConditioner && (
+                    {property.amenities.hasWifi && <Amenity>Wifi</Amenity>}
+                    {property.amenities.hasAirConditioner && (
                       <Amenity>Điều hòa</Amenity>
                     )}
-                    {property.amenities.kitchen && <Amenity>Bếp</Amenity>}
-                    {property.amenities.parking && (
+                    {property.amenities.hasKitchen && <Amenity>Bếp</Amenity>}
+                    {property.amenities.hasParking && (
                       <Amenity>Chỗ đậu xe</Amenity>
                     )}
                   </PropertyAmenities>

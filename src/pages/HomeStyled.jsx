@@ -50,9 +50,12 @@ export const BannerSubtitle = styled.p`
   margin: 0;
   padding-bottom: 20px;
 `;
+// Phần tìm kiếm
 export const SearchSection = styled.div`
-  padding: 20px;
-  background-color: #f9f9f9;
+  padding: 40px 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
 `;
 
@@ -60,37 +63,57 @@ export const SearchForm = styled.form`
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
+  align-items: center;
 `;
 
 export const SearchInput = styled.input`
   flex: 1;
   margin: 5px;
-  padding: 10px;
+  padding: 12px 15px;
   border: 1px solid #ccc;
   border-radius: 5px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.3s;
+
+  &:focus {
+    border-color: #007bff; // Thay đổi màu biên khi focus
+  }
 `;
 
 export const SearchSelect = styled.select`
   flex: 1;
   margin: 5px;
-  padding: 10px;
+  padding: 12px 15px;
   border: 1px solid #ccc;
   border-radius: 5px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.3s;
+
+  &:focus {
+    border-color: #007bff; // Thay đổi màu biên khi focus
+  }
 `;
 
 export const SearchButton = styled.button`
-  padding: 10px 20px;
+  padding: 12px 20px;
   background-color: #007bff;
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
 
   &:hover {
-    background-color: #0056b3;
+    background-color: #0056b3; // Màu nền khi hover
+  }
+
+  &:active {
+    background-color: #004085; // Màu nền khi nhấn
   }
 `;
-
 // Phần hiển thị danh sách nhà trọ nổi bật
 export const FeaturedSection = styled.section`
   margin-top: 20px;

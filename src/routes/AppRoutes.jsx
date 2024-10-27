@@ -46,6 +46,7 @@ const AppRoutes = () => {
         />
         <Route path="/listings" element={<Listings />} />
         <Route path="/listings/:id" element={<ListingDetail />} />
+
         <Route
           path="/profile"
           element={user ? <Profile /> : <Navigate to="/login" />}
@@ -58,6 +59,7 @@ const AppRoutes = () => {
           path="/create-post"
           element={user ? <CreatePost /> : <Navigate to="/" />}
         />
+
         {/* Thêm các tuyến đường khác nếu cần */}
       </Routes>
       <Footer />

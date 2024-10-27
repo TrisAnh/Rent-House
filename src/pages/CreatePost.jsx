@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { createPost } from "../api/post";
+import { AuthContext } from "../contexts/AuthContext";
+import { useContext } from "react"; // Thêm useContext vào đây
 const CreatePost = () => {
+  const { user } = useContext(AuthContext); // Lấy user từ AuthContext
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -12,8 +15,8 @@ const CreatePost = () => {
       ward: "",
       geoLocation: { latitude: 0, longitude: 0 },
     },
-    landlord: "",
-    roomType: "Single",
+    landlord: user ? user.id : null,
+    roomType: "Single", // Default value for roomType
     size: 0,
     availability: true,
     amenities: {
@@ -31,10 +34,17 @@ const CreatePost = () => {
     },
     images: [],
     videos: [],
+    averageRating: 0,
+    views: 0,
+    status: "Active", // Default status
   });
+
+  const [message, setMessage] = useState(""); // State for feedback messages
+  const [isLoading, setIsLoading] = useState(false); // State for loading
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
     if (type === "checkbox") {
       const [key, subKey] = name.split(".");
       setFormData((prevData) => ({
@@ -47,6 +57,15 @@ const CreatePost = () => {
         ...prevData,
         location: { ...prevData.location, [key]: value },
       }));
+    } else if (name.startsWith("additionalCosts.")) {
+      const key = name.split(".")[1];
+      setFormData((prevData) => ({
+        ...prevData,
+        additionalCosts: {
+          ...prevData.additionalCosts,
+          [key]: parseFloat(value),
+        },
+      }));
     } else {
       setFormData((prevData) => ({
         ...prevData,
@@ -55,23 +74,48 @@ const CreatePost = () => {
     }
   };
 
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    const newImages = files.map((file) => URL.createObjectURL(file)); // Create URLs for preview
+
+    setFormData((prevData) => ({
+      ...prevData,
+      images: [...prevData.images, ...newImages],
+    }));
+  };
+
+  const removeImage = (index) => {
+    setFormData((prevData) => {
+      const updatedImages = prevData.images.filter((_, i) => i !== index);
+      return { ...prevData, images: updatedImages };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage(""); // Reset message
+    setIsLoading(true); // Set loading to true
 
     try {
-      const response = await createPost(formData); // Gọi hàm createPost
-      console.log("Post created successfully:", response.data);
+      const response = await createPost(formData); // Call the createPost function
+      console.log(formData); // In ra dữ liệu trước khi gửi yêu cầu
+
+      console.log("Post created successfully:", response);
+      setMessage("Post created successfully!"); // Set success message
     } catch (error) {
-      console.error(
-        "Error creating post:",
-        error.response ? error.response.data : error.message
-      );
+      console.error("Error creating post:", error);
+      console.error("Error details:", error.response.data); // Xem chi tiết lỗi
+      setMessage(error.response.data.message || "Đã xảy ra lỗi."); // Cập nhật thông báo
+    } finally {
+      setIsLoading(false); // Set loading to false
     }
   };
 
   return (
     <div className="container mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-semibold mb-4">Đăng tin</h2>
+      {message && <div className="text-red-600">{message}</div>}{" "}
+      {/* Display message */}
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 gap-6 mb-4">
           {/* Title */}
@@ -143,6 +187,7 @@ const CreatePost = () => {
                 value={formData.location.city}
                 onChange={handleChange}
                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
               />
             </div>
             <div>
@@ -155,6 +200,7 @@ const CreatePost = () => {
                 value={formData.location.district}
                 onChange={handleChange}
                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
               />
             </div>
             <div>
@@ -165,6 +211,31 @@ const CreatePost = () => {
                 type="text"
                 name="location.ward"
                 value={formData.location.ward}
+                onChange={handleChange}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+            {/* GeoLocation */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Vĩ độ
+              </label>
+              <input
+                type="number"
+                name="location.geoLocation.latitude"
+                value={formData.location.geoLocation.latitude}
+                onChange={handleChange}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Kinh độ
+              </label>
+              <input
+                type="number"
+                name="location.geoLocation.longitude"
+                value={formData.location.geoLocation.longitude}
                 onChange={handleChange}
                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
@@ -183,15 +254,16 @@ const CreatePost = () => {
               className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
               <option value="Single">Phòng đơn</option>
-              <option value="Double">Phòng đôi</option>
-              <option value="Shared">Phòng chung</option>
+              <option value="Shared">Phòng chia sẻ</option>
+              <option value="Apartment">Căn hộ</option>
+              <option value="Dormitory">Ký túc xá</option>
             </select>
           </div>
 
           {/* Size */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Kích thước (m²)
+              Diện tích (m²)
             </label>
             <input
               type="number"
@@ -204,56 +276,51 @@ const CreatePost = () => {
 
           {/* Availability */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Tình trạng sẵn có
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                name="availability"
+                checked={formData.availability}
+                onChange={(e) => {
+                  setFormData({ ...formData, availability: e.target.checked });
+                }}
+                className="mr-2"
+              />
+              Có sẵn
             </label>
-            <input
-              type="checkbox"
-              name="availability"
-              checked={formData.availability}
-              onChange={handleChange}
-              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <span className="ml-2">Có sẵn</span>
           </div>
 
           {/* Amenities */}
           <div>
-            <h3 className="text-lg font-medium text-gray-700 mb-2">
-              Tiện nghi
-            </h3>
-            {Object.keys(formData.amenities).map((amenity) => (
-              <div key={amenity}>
+            <h3 className="text-sm font-medium text-gray-700">Tiện nghi</h3>
+            {Object.keys(formData.amenities).map((key) => (
+              <label key={key} className="flex items-center">
                 <input
                   type="checkbox"
-                  name={`amenities.${amenity}`}
-                  checked={formData.amenities[amenity]}
+                  name={`amenities.${key}`}
+                  checked={formData.amenities[key]}
                   onChange={handleChange}
                   className="mr-2"
                 />
-                <label className="text-sm text-gray-700 capitalize">
-                  {amenity}
-                </label>
-              </div>
+                {key.charAt(0).toUpperCase() + key.slice(1)}
+              </label>
             ))}
           </div>
 
           {/* Additional Costs */}
           <div>
-            <h3 className="text-lg font-medium text-gray-700 mb-2">
-              Chi phí bổ sung
-            </h3>
-            {Object.keys(formData.additionalCosts).map((cost) => (
-              <div key={cost}>
-                <label className="block text-sm font-medium text-gray-700">
-                  {cost.charAt(0).toUpperCase() + cost.slice(1)}
+            <h3 className="text-sm font-medium text-gray-700">Chi phí thêm</h3>
+            {Object.keys(formData.additionalCosts).map((key) => (
+              <div key={key} className="flex items-center">
+                <label className="mr-2">
+                  {key.charAt(0).toUpperCase() + key.slice(1)}:
                 </label>
                 <input
                   type="number"
-                  name={`additionalCosts.${cost}`}
-                  value={formData.additionalCosts[cost]}
+                  name={`additionalCosts.${key}`}
+                  value={formData.additionalCosts[key]}
                   onChange={handleChange}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
             ))}
@@ -266,44 +333,59 @@ const CreatePost = () => {
             </label>
             <input
               type="file"
-              accept="image/*"
               multiple
-              onChange={(e) => {
-                setFormData((prevData) => ({
-                  ...prevData,
-                  images: Array.from(e.target.files),
-                }));
-              }}
+              onChange={handleImageChange}
               className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
+            <div className="mt-2">
+              {formData.images.map((image, index) => (
+                <div key={index} className="relative inline-block">
+                  <img
+                    src={image}
+                    alt={`Preview ${index}`}
+                    className="w-20 h-20 object-cover rounded-md mr-2"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 text-sm"
+                  >
+                    X
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Videos */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Video
+              Video (URL)
             </label>
             <input
-              type="file"
-              accept="video/*"
-              multiple
+              type="text"
+              name="videos"
+              value={formData.videos.join(", ")}
               onChange={(e) => {
-                setFormData((prevData) => ({
-                  ...prevData,
-                  videos: Array.from(e.target.files),
-                }));
+                const urls = e.target.value.split(",").map((url) => url.trim());
+                setFormData({ ...formData, videos: urls });
               }}
               className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
           {/* Submit Button */}
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white font-semibold py-2 rounded-md hover:bg-blue-700 transition duration-200"
-          >
-            Đăng tin
-          </button>
+          <div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full mt-4 px-4 py-2 font-medium text-white rounded-md ${
+                isLoading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-500"
+              }`}
+            >
+              {isLoading ? "Đang tạo..." : "Tạo bài viết"}
+            </button>
+          </div>
         </div>
       </form>
     </div>

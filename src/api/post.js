@@ -7,5 +7,11 @@ export const postTopView = (data) => {
   return axiosInstance.get("/post/top-views", data);
 };
 export const searchPost = (params) => {
-  return axiosInstance.get("/post/search", params);
+  return axiosInstance.get("/post/search", { params });
+};
+export const getAllPosts = () => {
+  return axiosInstance.get("/post/getAll");
+};
+export const getPostById = (id) => {
+  return axiosInstance.get(`/post/${id}`);
 };
