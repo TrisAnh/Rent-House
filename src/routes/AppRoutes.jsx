@@ -18,6 +18,12 @@ import OTP from "../pages/OTP";
 import ForgotPassword from "../pages/ForgotPassword";
 import EditProfile from "../pages/EditProfile";
 import CreatePost from "../pages/CreatePost";
+import PhoneVerification from "../pages/PhoneVerify";
+import Contract from "../pages/Contract";
+import FavoritesPage from "../pages/Favorites";
+import { BookingFormContainer } from "../styled/ListingDetailStyles";
+import RoomBookingForm from "../pages/BookingRoom";
+
 const AppRoutes = () => {
   const { user } = useAuth();
 
@@ -59,8 +65,11 @@ const AppRoutes = () => {
           path="/create-post"
           element={user ? <CreatePost /> : <Navigate to="/" />}
         />
-
+        <Route path="/phone" element={<PhoneVerification />} />
+        <Route path="/Contract" element={<Contract />} />
+        <Route path="/favourite" element={<FavoritesPage />} />
         {/* Thêm các tuyến đường khác nếu cần */}
+        <Route path="/booking/:id" element={<RoomBookingForm />} />
       </Routes>
       <Footer />
     </Router>

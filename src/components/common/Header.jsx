@@ -14,7 +14,7 @@ const Header = () => {
           <p style={logoSubTextStyle}>Kênh thông tin phòng trọ số 1 Việt Nam</p>
         </div>
         <div style={topNavStyle}>
-          <Link to="/favorites" style={topNavLinkStyle}>
+          <Link to="/favourite" style={topNavLinkStyle}>
             ❤️ Yêu thích
           </Link>
 
@@ -40,7 +40,7 @@ const Header = () => {
               </Link>
             </>
           )}
-          <Link to="/create-post" style={postButtonStyle}>
+          <Link to="/phone" style={postButtonStyle}>
             ➕ Đăng tin miễn phí
           </Link>
         </div>

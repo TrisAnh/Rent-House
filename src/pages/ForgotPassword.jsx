@@ -13,7 +13,7 @@ import {
   FooterText,
   Label,
   MessageText,
-} from "./ForgotPasswordStyled";
+} from "../styled/ForgotPasswordStyled";
 
 const ForgotPassword = () => {
   const [step, setStep] = useState(1); // Quản lý bước hiện tại

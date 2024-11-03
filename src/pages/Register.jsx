@@ -16,7 +16,7 @@ import {
   Button,
   Terms,
   LoginLink,
-} from "./RegisterStyled";
+} from "../styled/RegisterStyled";
 import { FaUser, FaEnvelope, FaLock, FaPhone, FaHome } from "react-icons/fa";
 
 const Register = () => {
@@ -33,7 +33,7 @@ const Register = () => {
     e.preventDefault();
     try {
       const response = await registerApi(values);
-
+      console.log("123", response);
       // Kiểm tra mã trạng thái phản hồi
       if (response.status === 200) {
         toast.success("Đăng ký thành công! Vui lòng nhập mã OTP.");

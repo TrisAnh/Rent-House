@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { createPost } from "../api/post";
 import { AuthContext } from "../contexts/AuthContext";
 import { useContext } from "react"; // Thêm useContext vào đây
+import { useNavigate } from "react-router-dom";
 const CreatePost = () => {
+  const navigate = useNavigate();
   const { user } = useContext(AuthContext); // Lấy user từ AuthContext
   const [formData, setFormData] = useState({
     title: "",
@@ -90,27 +92,29 @@ const CreatePost = () => {
       return { ...prevData, images: updatedImages };
     });
   };
-
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage(""); // Reset message
-    setIsLoading(true); // Set loading to true
+    if (!user || user.role !== "renter") {
+      navigate("/phone"); // Điều hướng đến trang phone nếu người dùng không phải là người thuê
+      return; // Dừng hàm
+    }
+
+    e.preventDefault(); // Ngăn chặn hành vi mặc định của form
+    setMessage(""); // Đặt lại thông báo
+    setIsLoading(true); // Bắt đầu trạng thái tải lên
 
     try {
-      const response = await createPost(formData); // Call the createPost function
+      const response = await createPost(formData); // Gửi dữ liệu form để tạo bài đăng
       console.log(formData); // In ra dữ liệu trước khi gửi yêu cầu
-
-      console.log("Post created successfully:", response);
-      setMessage("Post created successfully!"); // Set success message
+      console.log("Bài đăng đã được tạo thành công:", response.data); // Kiểm tra phản hồi
+      setMessage("Bài đăng đã được tạo thành công!"); // Thông báo thành công
     } catch (error) {
-      console.error("Error creating post:", error);
-      console.error("Error details:", error.response.data); // Xem chi tiết lỗi
-      setMessage(error.response.data.message || "Đã xảy ra lỗi."); // Cập nhật thông báo
+      console.error("Lỗi khi tạo bài đăng:", error);
+      console.error("Chi tiết lỗi:", error.response?.data); // Sử dụng optional chaining để tránh lỗi
+      setMessage(error.response?.data?.message || "Đã xảy ra lỗi."); // Hiển thị thông báo lỗi
     } finally {
-      setIsLoading(false); // Set loading to false
+      setIsLoading(false); // Đặt trạng thái tải lên về false trong mọi trường hợp
     }
   };
-
   return (
     <div className="container mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-semibold mb-4">Đăng tin</h2>

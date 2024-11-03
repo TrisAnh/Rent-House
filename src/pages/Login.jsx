@@ -12,7 +12,7 @@ import {
   Button,
   Link,
   FooterText,
-} from "./LoginStyled";
+} from "../styled/LoginStyled";
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ email: "", password: "" });

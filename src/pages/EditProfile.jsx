@@ -1,6 +1,6 @@
 // src/pages/EditProfile.jsx
 import React, { useState, useEffect } from "react";
-import { updateUser } from "../api/auth"; 
+import { updateUser } from "../api/auth";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import {
@@ -14,10 +14,10 @@ import {
   MessageText,
   Card,
   Icon,
-} from "./EditProfileStyled"; 
+} from "../styled/EditProfileStyled";
 
 const EditProfile = () => {
-  const { user, token, login } = useAuth();
+  const { user, token, setUser, login } = useAuth();
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -47,23 +47,32 @@ const EditProfile = () => {
     setMessage("");
   };
   const handleSubmit = async (e) => {
-    e.preventDefault(); 
+    e.preventDefault();
 
     setLoading(true);
-    console.log("Submitting form data:", formData); 
+    setError("");
+    setMessage("");
+
     try {
-      const updatedUser = await updateUser(user.id, { ...formData }, token);
-      console.log("Updated user response:", updatedUser); 
+      const updatedUserResponse = await updateUser(
+        user.id,
+        { ...formData },
+        token
+      );
+      const updatedUser = updatedUserResponse.data.user;
 
-      await login({ token, ...updatedUser.data }); 
-      console.log("User logged in:", updatedUser.data);
+      // Cập nhật thông tin người dùng trong state
+      login({ token, user: updatedUser });
 
-      navigate("/profile", { state: { updated: true } }); 
+      setMessage("Thông tin của bạn đã được cập nhật thành công.");
+      navigate("/profile", { state: { updated: true } });
     } catch (err) {
-      console.error("Error during update:", err); 
-      setError("Đã xảy ra lỗi khi cập nhật thông tin. Vui lòng thử lại.");
+      const errorMsg =
+        err.response?.data?.msg || "Lỗi máy chủ. Vui lòng thử lại sau.";
+      setError(errorMsg);
+      console.error("Error during update:", err);
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
 

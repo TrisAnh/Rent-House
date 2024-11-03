@@ -15,7 +15,7 @@ import {
   Button,
   Terms,
   ResendLink,
-} from "./OTPStyled";
+} from "../styled/OTPStyled";
 
 const OTP = () => {
   const { values, handleChange } = useForm({

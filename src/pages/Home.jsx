@@ -29,7 +29,7 @@ import {
   ContactSection,
   ContactInfo,
   ContactItem,
-} from "./HomeStyled";
+} from "../styled/HomeStyled";
 import { Link } from "react-router-dom";
 const Home = () => {
   const [featuredProperties, setFeaturedProperties] = useState([]);

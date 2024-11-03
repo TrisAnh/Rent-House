@@ -9,28 +9,28 @@ const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
   const login = async (userData) => {
-    const { token: tokenData } = userData;
-    localStorage.setItem("token", tokenData);
-    setToken(tokenData);
-    try {
-      const currentUserResponse = await getCurrentUser(tokenData);
-      console.log("Current User Response:", currentUserResponse); // Thêm dòng này
+    if (userData && userData.user && userData.token) {
+      const { id, username, email, phone, address, user_role } = userData.user;
+      const token = userData.token;
+      const refreshToken = userData.refreshToken;
 
-      if (currentUserResponse.data && currentUserResponse.data.id) {
-        const { id, email } = currentUserResponse.data;
+      // Cập nhật thông tin người dùng và token
+      setUser({ id, username, email, phone, address, user_role });
+      setToken(token);
 
-        // Gọi API để lấy thông tin người dùng theo ID
-        const userResponse = await getUserById(id, tokenData);
-        const { username, phone, address } = userResponse.data;
-        setUser({ id, email, username, phone, address });
-        console.log("User logged in:", { id, email, username, phone, address });
-      } else {
-        throw new Error("ID không hợp lệ từ API getCurrentUser");
-      }
-    } catch (error) {
-      console.error("Failed to fetch user profile after login", error);
-      logout(); // Nếu có lỗi, thực hiện đăng xuất
+      // Lưu vào localStorage để tự động đăng nhập lần sau
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ id, username, email, phone, address, user_role })
+      );
+      localStorage.setItem("token", token);
+      localStorage.setItem("refreshToken", refreshToken);
+
+      console.log("Thông tin người dùng đăng nhập thành công:", userData.user);
+    } else {
+      console.error("Thông tin người dùng không đầy đủ");
     }
   };
 
@@ -38,39 +38,43 @@ const AuthProvider = ({ children }) => {
     setUser(null);
     setToken(null);
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("refreshToken");
     console.log("User logged out");
   };
 
   useEffect(() => {
     const initializeUser = async () => {
       const storedToken = localStorage.getItem("token");
-      if (storedToken) {
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+
+      if (storedToken && storedUser) {
         setToken(storedToken);
+        setUser(storedUser);
+
         try {
+          // Kiểm tra xem token có hợp lệ hay không bằng cách gọi API getCurrentUser
           const currentUserResponse = await getCurrentUser(storedToken);
 
-          // Kiểm tra ID từ response
           if (currentUserResponse.data && currentUserResponse.data.id) {
-            const { id, email } = currentUserResponse.data;
-
-            // Gọi API để lấy thông tin người dùng theo ID
-            const userResponse = await getUserById(id, storedToken); // Đảm bảo id không phải là {id}
-            const { username, phone, address } = userResponse.data;
-
-            setUser({ id, email, username, phone, address });
+            const { id, email, username, phone, address, user_role } =
+              currentUserResponse.data;
+            setUser({ id, email, username, phone, address, user_role });
             console.log("User fetched on mount:", {
               id,
               email,
               username,
               phone,
               address,
+              user_role,
             });
           } else {
             throw new Error("ID không hợp lệ từ API getCurrentUser");
           }
         } catch (err) {
           console.error("Failed to fetch user profile on mount", err);
-          logout(); // Nếu có lỗi, thực hiện đăng xuất
+          setError(err.message);
+          logout();
         }
       }
       setLoading(false);
@@ -86,6 +90,11 @@ const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
+};
+
+const updateRole = async (userId, newRole) => {
+  // Logic để cập nhật vai trò của người dùng trong cơ sở dữ liệu
+  // Có thể gọi API để thực hiện điều này
 };
 
 export default AuthProvider;

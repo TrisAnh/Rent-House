@@ -12,7 +12,7 @@ import {
   Value,
   Button,
   MessageText,
-} from "./ProfileStyled";
+} from "../styled/ProfileStyled";
 import { useAuth } from "../hooks/useAuth";
 
 const Profile = () => {
@@ -24,7 +24,7 @@ const Profile = () => {
   const location = useLocation();
 
   const fetchProfile = async () => {
-    if (!user || !token) {
+    if (!user || !user.id || !token) {
       setError("Bạn cần đăng nhập để xem thông tin cá nhân.");
       setLoading(false);
       return;
@@ -34,38 +34,40 @@ const Profile = () => {
       const response = await getUserById(user.id, token);
       setProfile(response.data);
     } catch (err) {
-      if (err.response) {
-        if (err.response.status === 404) {
-          setError("Không tìm thấy người dùng.");
-        } else if (err.response.status === 500) {
-          setError("Lỗi máy chủ. Vui lòng thử lại sau.");
-        } else {
-          setError("Đã xảy ra lỗi. Vui lòng thử lại.");
-        }
-      } else {
-        setError("Không thể kết nối đến server.");
-      }
+      handleFetchError(err);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleFetchError = (err) => {
+    if (err.response) {
+      if (err.response.status === 404) {
+        setError("Không tìm thấy người dùng.");
+      } else if (err.response.status === 500) {
+        setError("Lỗi máy chủ. Vui lòng thử lại sau.");
+      } else {
+        setError("Đã xảy ra lỗi. Vui lòng thử lại.");
+      }
+    } else {
+      setError("Không thể kết nối đến server.");
+    }
+  };
+
   useEffect(() => {
-    fetchProfile(); // Gọi ngay khi component được mount
+    fetchProfile();
   }, [user, token]);
 
-  // Kiểm tra nếu trang chuyển hướng từ trang chỉnh sửa thành công
   useEffect(() => {
     if (location.state && location.state.updated) {
       setError("Thông tin cá nhân đã được cập nhật thành công.");
-      fetchProfile(); // Gọi lại hàm này để cập nhật thông tin
+      fetchProfile();
     }
   }, [location.state]);
 
   const handleEditProfile = () => {
-    navigate("/editProfile");
+    navigate("/editProfile", { state: { fromProfile: true } });
   };
-
   if (loading) {
     return (
       <Container>
@@ -82,26 +84,7 @@ const Profile = () => {
       <Box>
         <Title>Thông Tin Cá Nhân</Title>
         {error && <MessageText type="error">{error}</MessageText>}
-        {profile && (
-          <InfoContainer>
-            <InfoItem>
-              <Label>Username:</Label>
-              <Value>{profile.username}</Value>
-            </InfoItem>
-            <InfoItem>
-              <Label>Email:</Label>
-              <Value>{profile.email}</Value>
-            </InfoItem>
-            <InfoItem>
-              <Label>Phone:</Label>
-              <Value>{profile.phone}</Value>
-            </InfoItem>
-            <InfoItem>
-              <Label>Address:</Label>
-              <Value>{profile.address}</Value>
-            </InfoItem>
-          </InfoContainer>
-        )}
+        {profile && renderProfileInfo(profile)}
         {profile && (
           <Button onClick={handleEditProfile}>Chỉnh Sửa Thông Tin</Button>
         )}
@@ -109,5 +92,26 @@ const Profile = () => {
     </Container>
   );
 };
+
+const renderProfileInfo = (profile) => (
+  <InfoContainer>
+    <InfoItem>
+      <Label>Username:</Label>
+      <Value>{profile.username}</Value>
+    </InfoItem>
+    <InfoItem>
+      <Label>Email:</Label>
+      <Value>{profile.email}</Value>
+    </InfoItem>
+    <InfoItem>
+      <Label>Phone:</Label>
+      <Value>{profile.phone}</Value>
+    </InfoItem>
+    <InfoItem>
+      <Label>Address:</Label>
+      <Value>{profile.address}</Value>
+    </InfoItem>
+  </InfoContainer>
+);
 
 export default Profile;
