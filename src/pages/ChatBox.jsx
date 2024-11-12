@@ -6,6 +6,7 @@ import { getPostById } from "../api/post";
 import { useParams } from "react-router-dom";
 import { createMessage } from "../api/message";
 import { getMessagesByChatId } from "../api/message";
+import { io } from "socket.io-client";
 
 const buttonStyle = {
   display: "inline-flex",
@@ -37,6 +38,8 @@ const textareaStyle = {
   marginBottom: "0.5rem",
 };
 
+const socket = io("https://be-android-project.onrender.com");
+
 export default function ChatBox() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -49,6 +52,22 @@ export default function ChatBox() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [chatId, setChatId] = useState(null);
+
+  useEffect(() => {
+    if (chatId) {
+      socket.emit("joinChat", chatId);
+    }
+  }, [chatId]);
+
+  useEffect(() => {
+    socket.on("receiveMessage", (message) => {
+      setMessages((prevMessages) => [...prevMessages, message]);
+    });
+
+    return () => {
+      socket.off("receiveMessage");
+    };
+  }, []);
 
   const fetchMessages = async (chatId) => {
     try {
@@ -84,8 +103,8 @@ export default function ChatBox() {
       createChat(requestData).then((chatResponse) => {
         const chatId = chatResponse.data._id;
         console.log("Chat Id: ", chatResponse.data._id);
-        setChatId(chatId); // Cập nhật chatId
-        fetchMessages(chatId); // Gọi hàm lấy tin nhắn
+        setChatId(chatId);
+        fetchMessages(chatId);
       });
     }
   }, [landlord]);
@@ -104,9 +123,7 @@ export default function ChatBox() {
 
       try {
         const response = await createMessage(messageData);
-        // Sau khi gửi tin nhắn, có thể gọi lại để lấy các tin nhắn mới nhất từ server
         console.log("Tin nhắn đã gửi", response);
-        fetchMessages(chatId); // Tải lại tin nhắn mới nhất
       } catch (error) {
         console.error("Có lỗi xảy ra khi gửi tin nhắn:", error);
       }
@@ -162,8 +179,6 @@ export default function ChatBox() {
               <div>Không có tin nhắn nào.</div>
             ) : (
               messages.map((msg, index) => {
-                console.log("User ID:", user.id, "Sender ID:", msg.sender); // Kiểm tra giá trị User ID và Sender ID
-
                 const isCurrentUser = msg.sender === user.id;
 
                 return (
@@ -185,7 +200,7 @@ export default function ChatBox() {
                         wordWrap: "break-word",
                       }}
                     >
-                      {msg.content} {/* Hiển thị nội dung tin nhắn */}
+                      {msg.content}
                     </div>
                   </div>
                 );

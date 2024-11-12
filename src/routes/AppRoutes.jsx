@@ -23,15 +23,17 @@ import Contract from "../pages/Contract";
 import FavoritesPage from "../pages/Favorites";
 import { BookingFormContainer } from "../styled/ListingDetailStyles";
 import RoomBookingForm from "../pages/BookingRoom";
-
+import PaymentPage from "../pages/PaymentPage";
+import RenterHeader from "../components/common/renterHeader";
+import BookingDetails from "../pages/InforBooking";
 const AppRoutes = () => {
-  const { user } = useAuth();
-
+  const { user, user_role } = useAuth();
+  console.log("approute", user_role);
   return (
     <Router>
-      {" "}
-      {/* Router bao bọc toàn bộ ứng dụng */}
-      <Header /> {/* Header được render đúng cách và không lặp */}
+      {/* Conditionally render the header based on userRole */}
+      {user_role === "Renter" ? <RenterHeader /> : <Header />}
+
       <Routes>
         <Route path="/" element={<Home />} />
         <Route
@@ -70,6 +72,8 @@ const AppRoutes = () => {
         <Route path="/favourite" element={<FavoritesPage />} />
         {/* Thêm các tuyến đường khác nếu cần */}
         <Route path="/booking/:id" element={<RoomBookingForm />} />
+        <Route path="/payment" element={<PaymentPage />} />
+        <Route path="/inforBooking" element={<BookingDetails />} />
       </Routes>
       <Footer />
     </Router>

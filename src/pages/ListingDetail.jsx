@@ -85,8 +85,10 @@ const ListingDetail = () => {
         const response = await getPostById(id); // Lấy bài đăng theo ID
         setListing(response.data); // Lưu dữ liệu bài đăng
         console.log(response.data);
-        if (response.data.landlord) {
-          const landlordResponse = await getUserById(response.data.landlord);
+        if (response.data.landlord._id) {
+          const landlordResponse = await getUserById(
+            response.data.landlord._id
+          );
           setLandlord(landlordResponse.data);
 
           console.log(landlordResponse);
@@ -105,11 +107,6 @@ const ListingDetail = () => {
 
   const toggleFavorite = async () => {
     try {
-      const id_user_rent = "60d0fe4f5311236168a109ca"; // ID của người dùng
-      const id_post = "60d0fe4f5311236168a109cb"; // ID của bài đăng
-
-      const response = await createFavourite(id_user_rent, id_post);
-      console.log("Mục yêu thích đã được tạo:", response.data);
       setIsFavorited(!isFavorited);
       toast.success("Mục yêu thích đã được tạo thành công!"); // Hiển thị thông báo thành công
     } catch (err) {
@@ -122,6 +119,9 @@ const ListingDetail = () => {
   };
   const handleNavigate = () => {
     navigate(`/booking/${id}`); // Chuyển đến trang mới với ID bài viết
+  };
+  const handleNavigate1 = () => {
+    navigate(`/contract`); // Chuyển đến trang mới với ID bài viết
   };
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -340,6 +340,7 @@ const ListingDetail = () => {
         </ContactInfo>
 
         <BookButton onClick={handleNavigate}>Đặt lịch</BookButton>
+        <BookButton onClick={handleNavigate1}>Đặt cọc</BookButton>
         {/* Thêm nút Đặt cọc */}
       </ContactContainer>
       {/* Hiển thị Form Đặt Lịch */}

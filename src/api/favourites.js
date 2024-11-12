@@ -9,3 +9,6 @@ export const createFavourite = (id_user_rent, id_post) => {
 export const getAllFavorites = () => {
   return axiosInstance.get("/favorite/getAll");
 };
+export const getFavorites = () => {
+  return axiosInstance.get("/favorite/user");
+};

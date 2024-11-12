@@ -15,7 +15,7 @@ const AuthProvider = ({ children }) => {
       const { id, username, email, phone, address, user_role } = userData.user;
       const token = userData.token;
       const refreshToken = userData.refreshToken;
-
+      console.log("token", token);
       // Cập nhật thông tin người dùng và token
       setUser({ id, username, email, phone, address, user_role });
       setToken(token);
@@ -27,7 +27,7 @@ const AuthProvider = ({ children }) => {
       );
       localStorage.setItem("token", token);
       localStorage.setItem("refreshToken", refreshToken);
-
+      console.log("authcontext", user_role);
       console.log("Thông tin người dùng đăng nhập thành công:", userData.user);
     } else {
       console.error("Thông tin người dùng không đầy đủ");
@@ -85,7 +85,15 @@ const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, login, logout, loading, error }}
+      value={{
+        user,
+        user_role: user?.user_role,
+        token,
+        login,
+        logout,
+        loading,
+        error,
+      }}
     >
       {children}
     </AuthContext.Provider>

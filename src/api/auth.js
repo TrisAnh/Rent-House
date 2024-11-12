@@ -27,3 +27,6 @@ export const resetPassword = (email, otp, newPassword) => {
 export const updateUser = (id, userData) => {
   return axiosInstance.put(`/auth/update/${id}`, userData);
 };
+export const updateRoleUser = (UserId, userData) => {
+  return axiosInstance.put(`/auth/update-role-to-renter/${UserId}`, userData);
+};
