@@ -1,8 +1,8 @@
 // src/api/users.js
 import axiosInstance from "./axiosInstance";
 
-export const getCurrentUser = (data) => {
-  return axiosInstance.get("auth/me", data);
+export const getCurrentUser = () => {
+  return axiosInstance.get("auth/me");
 };
 export const getUserById = (id) => {
   return axiosInstance.get(`auth/user/${id}`);

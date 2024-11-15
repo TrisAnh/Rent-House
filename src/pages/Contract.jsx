@@ -1,12 +1,16 @@
 import React, { useState, useRef } from "react";
 import SignatureCanvas from "react-signature-canvas";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 export default function Component() {
+  const location = useLocation();
+  const { amount, listingId } = location.state || {
+    amount: 0,
+    listingId: null,
+  };
   const [showModal, setShowModal] = useState(false);
   const [signature, setSignature] = useState(null);
   const sigCanvas = useRef(null);
   const navigate = useNavigate();
-  // Thông tin hợp đồng giả lập
   const contractData = {
     title: "Hợp đồng thuê trọ ABC",
     start_at: "2024-11-01",
@@ -36,7 +40,7 @@ export default function Component() {
   const handleSaveSignature = () => {
     const dataURL = sigCanvas.current.getTrimmedCanvas().toDataURL();
     setSignature(dataURL);
-    navigate("/payment");
+    navigate("/payment", { state: { amount, listingId } });
   };
 
   return (

@@ -39,7 +39,6 @@ const textareaStyle = {
 };
 
 const socket = io("https://be-android-project.onrender.com");
-
 export default function ChatBox() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -48,7 +47,7 @@ export default function ChatBox() {
   const { id } = useParams();
   const toggleChat = () => setIsOpen(!isOpen);
   const [landlord, setLandlord] = useState(null);
-  const { user } = useAuth();
+  const { user } = useAuth(); // Lấy thông tin người dùng từ hook
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [chatId, setChatId] = useState(null);
@@ -97,7 +96,7 @@ export default function ChatBox() {
   useEffect(() => {
     if (landlord) {
       const requestData = {
-        first: user.id,
+        first: user?.id, // Kiểm tra nếu user tồn tại
         seconde: landlord,
       };
       createChat(requestData).then((chatResponse) => {
@@ -117,7 +116,7 @@ export default function ChatBox() {
 
       const messageData = {
         chatId: chatId,
-        sender: user.id,
+        sender: user?.id, // Kiểm tra nếu user tồn tại
         content: inputMessage,
       };
 
@@ -134,6 +133,10 @@ export default function ChatBox() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Nếu chưa đăng nhập, không hiển thị chat box
+  if (!user) {
+    return null;
+  }
   return (
     <div
       style={{ position: "fixed", bottom: "1rem", right: "1rem", zIndex: 50 }}

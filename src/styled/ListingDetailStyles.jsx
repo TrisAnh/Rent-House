@@ -200,10 +200,8 @@ export const OnlineStatus = styled.span`
 
 // Text trạng thái
 export const StatusText = styled.span`
-  font-size: 1rem;
-  color: #333;
+  color: ${(props) => (props.$online ? "green" : "red")};
 `;
-
 // Số điện thoại
 export const PhoneText = styled.p`
   font-size: 1.6rem;

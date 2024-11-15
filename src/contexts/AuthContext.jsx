@@ -74,7 +74,6 @@ const AuthProvider = ({ children }) => {
         } catch (err) {
           console.error("Failed to fetch user profile on mount", err);
           setError(err.message);
-          logout();
         }
       }
       setLoading(false);

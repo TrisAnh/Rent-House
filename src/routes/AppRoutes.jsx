@@ -25,7 +25,10 @@ import { BookingFormContainer } from "../styled/ListingDetailStyles";
 import RoomBookingForm from "../pages/BookingRoom";
 import PaymentPage from "../pages/PaymentPage";
 import RenterHeader from "../components/common/renterHeader";
-import BookingDetails from "../pages/InforBooking";
+import BookingDetails from "../PageLandlord/InforBooking";
+import ListingDetailLandlord from "../PageLandlord/ListingDetail";
+import ListingEditForm from "../PageLandlord/EditForm";
+import ThankYouPage from "../pages/ThankYou";
 const AppRoutes = () => {
   const { user, user_role } = useAuth();
   console.log("approute", user_role);
@@ -54,7 +57,7 @@ const AppRoutes = () => {
         />
         <Route path="/listings" element={<Listings />} />
         <Route path="/listings/:id" element={<ListingDetail />} />
-
+        <Route path="/listingLandlord" element={<ListingDetailLandlord />} />
         <Route
           path="/profile"
           element={user ? <Profile /> : <Navigate to="/login" />}
@@ -74,6 +77,8 @@ const AppRoutes = () => {
         <Route path="/booking/:id" element={<RoomBookingForm />} />
         <Route path="/payment" element={<PaymentPage />} />
         <Route path="/inforBooking" element={<BookingDetails />} />
+        <Route path="/listingeditform/:id" element={<ListingEditForm />} />
+        <Route path="/thanks" element={<ThankYouPage />} />
       </Routes>
       <Footer />
     </Router>

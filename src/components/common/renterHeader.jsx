@@ -53,7 +53,7 @@ const RenterHeader = () => {
             </Link>
           </li>
           <li style={navbarItemStyle}>
-            <Link to="/manage-posts" style={linkStyle}>
+            <Link to="/listingLandlord" style={linkStyle}>
               📝 Quản lý bài đăng
             </Link>
           </li>

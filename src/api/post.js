@@ -15,3 +15,12 @@ export const getAllPosts = () => {
 export const getPostById = (id) => {
   return axiosInstance.get(`/post/${id}`);
 };
+export const getPostByIdLandlord = (landlordId) => {
+  return axiosInstance.get(`/post/landlord/${landlordId}`);
+};
+export const updatePostById = (id, updatedData) => {
+  return axiosInstance.put(`/post/${id}`, updatedData);
+};
+export const deletePostById = (id) => {
+  return axiosInstance.delete(`/post/${id}`);
+};
