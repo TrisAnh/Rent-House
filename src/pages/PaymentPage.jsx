@@ -128,7 +128,7 @@ const PaymentPage = () => {
     }
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/order/create_payment_url",
+        "https://be-android-project.onrender.com/api/order/create_payment_url",
         {
           amount: amount / 2,
           orderType: "",

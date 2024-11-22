@@ -39,6 +39,7 @@ const Comments = ({ listingId }) => {
             house: comment.house._id,
           }));
           setComments(formattedComments);
+          console.log("Bình luận của bài viết: ", formattedComments);
           if (fetchedComments.data.length > 0) {
             const house = fetchedComments.data[0].house;
             setHouseInfo(house);

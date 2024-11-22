@@ -3,7 +3,7 @@ import axiosInstance from "./axiosInstance";
 export const createPost = (postData) => {
   return axiosInstance.post("/post/create", postData);
 };
-export const postTopView = (data) => {
+export const getTopViewedPosts = (data) => {
   return axiosInstance.get("/post/top-views", data);
 };
 export const searchPost = (params) => {
@@ -23,4 +23,19 @@ export const updatePostById = (id, updatedData) => {
 };
 export const deletePostById = (id) => {
   return axiosInstance.delete(`/post/${id}`);
+};
+export const getPostActive = (data) => {
+  return axiosInstance.get("/post/getActivePost", data);
+};
+export const getPostByRoomType = (roomType) => {
+  return axiosInstance.get(`/post/room-type/${roomType}`);
+};
+export const getRoomTypes = () => {
+  return axiosInstance.get("/post/get-room-types");
+};
+export const getPostByDistrict = async (district) => {
+  return axiosInstance.get(`/post/district/${district}`);
+};
+export const getDistricts = async () => {
+  return axiosInstance.get("/post/districts");
 };

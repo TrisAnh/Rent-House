@@ -129,7 +129,8 @@ export default function ListingDetailLandlord({ onDelete }) {
               <Link to={`/listings/${listing._id}`}>
                 <img
                   src={
-                    listing.images[0] || "/placeholder.svg?height=200&width=300"
+                    listing.images[0].url ||
+                    "/placeholder.svg?height=200&width=300"
                   }
                   alt={listing.title}
                   className="w-full h-56 object-cover"

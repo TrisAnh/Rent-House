@@ -13,7 +13,7 @@ const Header = () => {
     // Fetch notifications using the getNotification function
     const fetchNotifications = async () => {
       try {
-        const response = await getNotification(); // API call to fetch notifications
+        const response = await getNotification(user.id); // API call to fetch notifications
         console.log("Dữ liệu thông báo:", response.data);
         setNotifications(response.data); // Store the notifications in the state
       } catch (error) {
@@ -94,7 +94,7 @@ const Header = () => {
             </button>
             {showNotifications && (
               <div style={notificationDropdownStyle}>
-                <h3 style={notificationHeaderStyle}>Thông báo</h3>
+                <h3 style={notificationHeaderStyle}>Thông báo từ hệ thống</h3>
                 {notifications.length > 0 ? (
                   notifications.map((notification) => (
                     <div key={notification._id} style={notificationItemStyle}>
@@ -138,7 +138,7 @@ const Header = () => {
             </Link>
           </li>
           <li style={navbarItemStyle}>
-            <Link to="/rent-apartment" style={linkStyle}>
+            <Link to="/apartment" style={linkStyle}>
               Cho thuê căn hộ
             </Link>
           </li>
@@ -148,7 +148,7 @@ const Header = () => {
             </Link>
           </li>
           <li style={navbarItemStyle}>
-            <Link to="/find-roommates" style={linkStyle}>
+            <Link to="/shared" style={linkStyle}>
               Tìm người ở ghép
             </Link>
           </li>

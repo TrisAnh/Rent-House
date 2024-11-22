@@ -68,7 +68,7 @@ const RoomBookingForm = () => {
         {postDetails.images.map((image, index) => (
           <img
             key={index}
-            src={image}
+            src={image.url}
             alt={`Hình ảnh phòng ${index + 1}`}
             style={imageStyle}
           />

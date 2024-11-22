@@ -1,5 +1,5 @@
 import axiosInstance from "./axiosInstance";
 
-export const getNotification = () => {
-  return axiosInstance.get("/notification/user");
+export const getNotification = (userId) => {
+  return axiosInstance.get(`/notification/user/${userId}`);
 };

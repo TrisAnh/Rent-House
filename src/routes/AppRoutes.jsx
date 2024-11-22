@@ -8,7 +8,7 @@ import {
 import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
-import Listings from "../pages/Listings";
+import Listings from "../pages/listingsRooom";
 import ListingDetail from "../pages/ListingDetail";
 import Profile from "../pages/Profile";
 import { useAuth } from "../hooks/useAuth";
@@ -29,6 +29,8 @@ import BookingDetails from "../PageLandlord/InforBooking";
 import ListingDetailLandlord from "../PageLandlord/ListingDetail";
 import ListingEditForm from "../PageLandlord/EditForm";
 import ThankYouPage from "../pages/ThankYou";
+import ListingsApartment from "../pages/listingsApartment";
+import SharedListings from "../pages/SharedListings";
 const AppRoutes = () => {
   const { user, user_role } = useAuth();
   console.log("approute", user_role);
@@ -56,6 +58,8 @@ const AppRoutes = () => {
           element={!user ? <Register /> : <Navigate to="/" />}
         />
         <Route path="/listings" element={<Listings />} />
+        <Route path="/apartment" element={<ListingsApartment />} />
+        <Route path="/shared" element={<SharedListings />} />
         <Route path="/listings/:id" element={<ListingDetail />} />
         <Route path="/listingLandlord" element={<ListingDetailLandlord />} />
         <Route
