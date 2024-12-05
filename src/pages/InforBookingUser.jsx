@@ -1,43 +1,41 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { Calendar, Clock, Home, Check, X } from "lucide-react";
+import { toast } from "react-toastify";
+import { useAuth } from "../hooks/useAuth";
 import {
   getRequestByUserId,
-  updateAcceptRequest,
-  updateDeclineRequest,
-  updateDeleteRequest,
   updateRequest,
+  updateDeleteRequest,
 } from "../api/request";
-import { useAuth } from "../hooks/useAuth";
 import { getUserById } from "../api/users";
 import { getPostById } from "../api/post";
-import { Link } from "react-router-dom";
-import { Calendar, Clock, User, Home, Check, X } from "lucide-react";
-import { toast } from "react-toastify";
 
 const BookingDetailsUser = () => {
   const [bookingData, setBookingData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { user } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
   const [updatingBookingId, setUpdatingBookingId] = useState(null);
   const [newDateTime, setNewDateTime] = useState("");
+  const { user } = useAuth();
+
   useEffect(() => {
     const fetchBookingDetails = async () => {
+      if (!user || !user.id) return;
+
       try {
         const response = await getRequestByUserId(user.id);
-        console.log("Booking response:", response); // Add logging
         const bookingsWithDetails = await Promise.all(
           response.data.map(async (booking) => {
             try {
               const userRent = await getUserById(booking.id_user_rent);
               const post = await getPostById(booking.id_post);
-              console.log("Dữ liệu người đặt phòng:", userRent);
-              console.log("Dữ liệu bài đăng:", post);
               return {
                 ...booking,
                 userRentName: userRent?.data.username || "N/A",
                 postTitle: post?.data.title || "N/A",
-                postId: post?.data._id, // Lưu lại postId để điều hướng
+                postId: post?.data._id,
               };
             } catch (error) {
               console.error("Error fetching booking details:", error);
@@ -53,32 +51,8 @@ const BookingDetailsUser = () => {
       }
     };
 
-    if (user && user.id) {
-      fetchBookingDetails();
-    }
+    fetchBookingDetails();
   }, [user]);
-  {
-    /*} const handleAccept = async (bookingId) => {
-    try {
-      await updateAcceptRequest(bookingId);
-      setBookingData((prevBookings) =>
-        prevBookings.map((booking) =>
-          booking._id === bookingId
-            ? { ...booking, status: "Accepted" }
-            : booking
-        )
-      );
-      toast.success("Chấp nhận yêu cầu thành công!"); // Thông báo thành công
-    } catch (error) {
-      toast.error("Không thể chấp nhận yêu cầu.");
-    }
-  };*/
-  }
-  const handleScheduleViewing = (id) => {
-    // Placeholder function for scheduling viewing
-    console.log("Đặt lịch xem cho bài đăng có ID:", id);
-    // Implement your scheduling logic here
-  };
 
   const handleDelete = async (bookingId) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa yêu cầu này không?")) {
@@ -94,59 +68,61 @@ const BookingDetailsUser = () => {
     }
   };
 
-  {
-    /*} const handleReject = async (bookingId) => {
-    if (window.confirm("Bạn có chắc chắn muốn từ chối yêu cầu này không?")) {
-      try {
-        await updateDeclineRequest(bookingId);
-        setBookingData((prevBookings) =>
-          prevBookings.map((booking) =>
-            booking._id === bookingId
-              ? { ...booking, status: "Declined" }
-              : booking
-          )
-        );
-        toast.success("Yêu cầu đã bị từ chối.");
-      } catch (error) {
-        toast.error("Không thể từ chối yêu cầu.");
-      }
-    }
-  };*/
-  }
-  const handleUpdate = async (bookingId, currentDateTime) => {
+  const handleUpdate = (bookingId, currentDateTime) => {
     setIsUpdating(true);
     setUpdatingBookingId(bookingId);
-    setNewDateTime(currentDateTime);
+    // Convert UTC to local time for the input
+    const localDateTime = new Date(currentDateTime)
+      .toLocaleString("sv-SE", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+      .replace(" ", "T");
+    setNewDateTime(localDateTime);
   };
 
   const submitUpdate = async () => {
-    if (newDateTime && newDateTime !== updatingBookingId) {
-      try {
-        await updateRequest(updatingBookingId, { date_time: newDateTime });
+    if (!newDateTime || !updatingBookingId) {
+      toast.error("Vui lòng chọn thời gian mới.");
+      return;
+    }
+
+    try {
+      // Convert local time to UTC before sending to the server
+      const utcDateTime = new Date(newDateTime).toISOString();
+
+      const response = await updateRequest(updatingBookingId, {
+        date_time: utcDateTime,
+      });
+
+      if (response.status === 200) {
         setBookingData((prevBookings) =>
           prevBookings.map((booking) =>
             booking._id === updatingBookingId
-              ? { ...booking, date_time: newDateTime }
+              ? { ...booking, date_time: utcDateTime }
               : booking
           )
         );
         toast.success("Yêu cầu đã được cập nhật thành công.");
-      } catch (error) {
-        toast.error("Không thể cập nhật yêu cầu.");
+      } else {
+        throw new Error("Update failed");
       }
+    } catch (error) {
+      console.error("Error updating request:", error);
+      toast.error("Không thể cập nhật yêu cầu.");
+    } finally {
+      setIsUpdating(false);
+      setUpdatingBookingId(null);
+      setNewDateTime("");
     }
-    setIsUpdating(false);
-    setUpdatingBookingId(null);
-    setNewDateTime("");
   };
 
-  if (loading) {
-    return <div className="loading">Đang tải...</div>;
-  }
-
-  if (error) {
-    return <div className="error">{error}</div>;
-  }
+  if (loading) return <div className="loading">Đang tải...</div>;
+  if (error) return <div className="error">{error}</div>;
 
   return (
     <div className="container">
@@ -166,67 +142,50 @@ const BookingDetailsUser = () => {
                 </Link>
               </div>
               <div className="booking-content">
-                {/* <p className="booking-info">
-                  <User className="icon" />
-                  <strong>Người Đặt:</strong> {booking.userRentName}
-                </p>*/}
                 <p className="booking-info">
                   <Calendar className="icon" />
-                  <strong>Ngày Đặt:</strong>{" "}
-                  {new Date(booking.date_time).toLocaleDateString("vi-VN", {
+                  <strong>Ngày và Giờ Đặt:</strong>{" "}
+                  {new Date(booking.date_time).toLocaleString("vi-VN", {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
                   })}
                 </p>
                 <p className="booking-info">
-                  <Clock className="icon" />
-                  <strong>Giờ Đặt:</strong>{" "}
-                  {new Date(booking.date_time).toLocaleTimeString("vi-VN", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  <strong>Trạng thái:</strong>{" "}
+                  <span className={`status ${booking.status.toLowerCase()}`}>
+                    {booking.status}
+                  </span>
                 </p>
               </div>
               <div className="booking-actions">
-                {booking.status !== "Accepted" &&
-                  booking.status !== "Declined" && (
-                    <>
-                      <button
-                        onClick={() => handleUpdate(booking._id)}
-                        className="btn btn-accept"
-                        disabled={
-                          booking.status === "Accepted" ||
-                          booking.status === "Declined"
-                        }
-                      >
-                        <Check className="icon" />
-                        Cập nhật
-                      </button>
-                      <button
-                        onClick={() => handleDelete(booking._id)}
-                        className="btn btn-reject"
-                        disabled={
-                          booking.status === "Accepted" ||
-                          booking.status === "Declined"
-                        }
-                      >
-                        <X className="icon" />
-                        Xoá
-                      </button>
-                    </>
-                  )}
-
-                {/*} {(booking.status === "Accepted" ||
-                  booking.status === "Declined") && (
+                {booking.status === "Pending" && (
                   <button
-                    onClick={() => handleDelete(booking._id)}
-                    className="btn btn-delete"
+                    onClick={() => handleUpdate(booking._id, booking.date_time)}
+                    className="btn btn-accept"
                   >
-                    <X className="icon" />
-                    Xoá
+                    <Check className="icon" />
+                    Cập nhật
                   </button>
-                )}*/}
+                )}
+                {(booking.status === "Accepted" ||
+                  booking.status === "Declined") && (
+                  <p className="status-message">
+                    {booking.status === "Accepted"
+                      ? "Đã được chấp nhận. Không thể chỉnh sửa."
+                      : "Đã bị từ chối. Không thể chỉnh sửa."}
+                  </p>
+                )}
+                <button
+                  onClick={() => handleDelete(booking._id)}
+                  className="btn btn-reject"
+                >
+                  <X className="icon" />
+                  Xoá
+                </button>
               </div>
             </div>
           ))}
@@ -262,7 +221,7 @@ const BookingDetailsUser = () => {
           </div>
         </div>
       )}
-      <style jsx>{`
+      <style>{`
         .container {
           max-width: 800px;
           margin: 0 auto;
@@ -321,33 +280,29 @@ const BookingDetailsUser = () => {
           align-items: center;
         }
 
-        .icon-home,
-        .icon-calendar,
-        .icon-clock,
-        .icon-check,
-        .icon-x {
+        .icon {
           margin-right: 10px;
-          width: 20px;
-          height: 20px;
-          display: inline-block;
-          background-size: contain;
-          background-repeat: no-repeat;
         }
 
-        .icon-home {
-          background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>');
+        .status {
+          font-weight: bold;
+          padding: 5px 10px;
+          border-radius: 4px;
         }
-        .icon-calendar {
-          background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>');
+
+        .status.pending {
+          background-color: #f39c12;
+          color: #fff;
         }
-        .icon-clock {
-          background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>');
+
+        .status.accepted {
+          background-color: #2ecc71;
+          color: #fff;
         }
-        .icon-check {
-          background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>');
-        }
-        .icon-x {
-          background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>');
+
+        .status.declined {
+          background-color: #e74c3c;
+          color: #fff;
         }
 
         .booking-actions {
@@ -436,8 +391,15 @@ const BookingDetailsUser = () => {
           display: flex;
           justify-content: space-between;
         }
+
+        .status-message {
+          font-style: italic;
+          color: #666;
+          margin-top: 10px;
+        }
       `}</style>
     </div>
   );
 };
+
 export default BookingDetailsUser;

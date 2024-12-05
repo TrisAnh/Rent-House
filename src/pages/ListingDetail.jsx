@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { getPostById, getTopViewedPosts } from "../api/post";
+import {
+  getPostById,
+  getTopViewedPosts,
+  incrementViewCount,
+} from "../api/post";
 import { getUserById } from "../api/users";
 import { useAuth } from "../hooks/useAuth";
 import { toast } from "react-toastify";
@@ -61,6 +65,7 @@ const ListingDetail = () => {
           );
           setLandlord(landlordResponse.data);
         }
+        await incrementViewCount(id);
       } catch (err) {
         setError(err.message);
       } finally {

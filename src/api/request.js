@@ -23,6 +23,6 @@ export const updateDeleteRequest = (id) => {
 export const getRequestByUserId = (userId) => {
   return axiosInstance.get(`/request/user/${userId}`);
 };
-export const updateRequest = (id) => {
-  return axiosInstance.put(`/request/${id}`);
+export const updateRequest = (id, updateData) => {
+  return axiosInstance.put(`/request/${id}`, updateData);
 };

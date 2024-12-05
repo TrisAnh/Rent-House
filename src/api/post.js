@@ -39,3 +39,20 @@ export const getPostByDistrict = async (district) => {
 export const getDistricts = async () => {
   return axiosInstance.get("/post/districts");
 };
+export const incrementViewCount = async (id) => {
+  try {
+    const response = await fetch(
+      `https://be-android-project.onrender.com/api/post/${id}/views`,
+      {
+        method: "PUT",
+      }
+    );
+    if (!response.ok) {
+      throw new Error("Failed to increment view count");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error incrementing view count:", error);
+    throw error;
+  }
+};
