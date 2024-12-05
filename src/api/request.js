@@ -8,6 +8,9 @@ export const createRequest = (data) => {
 export const getRequest = (renterId) => {
   return axiosInstance.get(`/request/renter/${renterId}`);
 };
+export const getRequestByPostId = (postId) => {
+  return axiosInstance.get(`/request/post/${postId}`);
+};
 export const updateAcceptRequest = (id) => {
   return axiosInstance.put(`/request/${id}/accept`);
 };
@@ -16,4 +19,10 @@ export const updateDeclineRequest = (id) => {
 };
 export const updateDeleteRequest = (id) => {
   return axiosInstance.delete(`/request/${id}`);
+};
+export const getRequestByUserId = (userId) => {
+  return axiosInstance.get(`/request/user/${userId}`);
+};
+export const updateRequest = (id) => {
+  return axiosInstance.put(`/request/${id}`);
 };

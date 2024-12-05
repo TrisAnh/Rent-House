@@ -1,0 +1,157 @@
+.add-listing-form {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 30px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.add-listing-form h1 {
+  text-align: center;
+  color: #2c3e50;
+  margin-bottom: 30px;
+  font-size: 28px;
+}
+
+.add-listing-form label {
+  display: block;
+  margin: 15px 0 5px;
+  color: #34495e;
+  font-weight: 500;
+}
+
+.add-listing-form input[type="text"],
+.add-listing-form input[type="number"],
+.add-listing-form textarea,
+.add-listing-form select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-size: 14px;
+  transition: border-color 0.3s;
+}
+
+.add-listing-form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.add-listing-form input:focus,
+.add-listing-form textarea:focus,
+.add-listing-form select:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.form-section {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 6px;
+  margin: 25px 0;
+}
+
+.form-section h2 {
+  color: #2c3e50;
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+}
+
+.form-group {
+  flex: 1;
+}
+
+.amenities {
+  margin: 25px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.amenities h3 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+}
+
+.amenities label {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 20px;
+  cursor: pointer;
+}
+
+.amenities input[type="checkbox"] {
+  margin-right: 8px;
+  width: 16px;
+  height: 16px;
+}
+
+.media-upload {
+  margin: 25px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.media-preview {
+  margin: 20px 0;
+}
+
+.media-preview img,
+.media-preview video {
+  object-fit: cover;
+  border-radius: 4px;
+  margin: 10px;
+}
+
+.media-preview button {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.submit-button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.submit-button:hover {
+  background: #2980b9;
+}
+
+@media (max-width: 768px) {
+  .add-listing-form {
+    padding: 20px;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .amenities label {
+    display: block;
+    margin-bottom: 10px;
+  }
+}

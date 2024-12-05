@@ -22,7 +22,7 @@ import PhoneVerification from "../pages/PhoneVerify";
 import Contract from "../pages/Contract";
 import FavoritesPage from "../pages/Favorites";
 import { BookingFormContainer } from "../styled/ListingDetailStyles";
-import RoomBookingForm from "../pages/BookingRoom";
+import RoomBookingForm from "../pages/BookingForm";
 import PaymentPage from "../pages/PaymentPage";
 import RenterHeader from "../components/common/renterHeader";
 import BookingDetails from "../PageLandlord/InforBooking";
@@ -31,6 +31,9 @@ import ListingEditForm from "../PageLandlord/EditForm";
 import ThankYouPage from "../pages/ThankYou";
 import ListingsApartment from "../pages/listingsApartment";
 import SharedListings from "../pages/SharedListings";
+import Blog from "../pages/Blog";
+import BlogDetail from "../pages/BlogDetail";
+import BookingDetailsUser from "../pages/InforBookingUser";
 const AppRoutes = () => {
   const { user, user_role } = useAuth();
   console.log("approute", user_role);
@@ -80,9 +83,12 @@ const AppRoutes = () => {
         {/* Thêm các tuyến đường khác nếu cần */}
         <Route path="/booking/:id" element={<RoomBookingForm />} />
         <Route path="/payment" element={<PaymentPage />} />
-        <Route path="/inforBooking" element={<BookingDetails />} />
+        <Route path="/booking-details" element={<BookingDetails />} />
         <Route path="/listingeditform/:id" element={<ListingEditForm />} />
         <Route path="/thanks" element={<ThankYouPage />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:id" element={<BlogDetail />} />
+        <Route path="/inforbooking" element={<BookingDetailsUser />} />
       </Routes>
       <Footer />
     </Router>

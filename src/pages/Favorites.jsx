@@ -1,25 +1,23 @@
 import React, { useState, useEffect } from "react";
-import { getFavorites } from "../api/favourites";
+import { getFavorites, removeFavourite } from "../api/favourites";
 import { useAuth } from "../hooks/useAuth";
-
+import { toast } from "react-toastify";
+import { useParams, useNavigate, Link } from "react-router-dom";
 const FavoritesPage = () => {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user, token } = useAuth();
-  console.log("User:", user);
-  console.log("Token:", token);
 
   useEffect(() => {
     const fetchFavorites = async () => {
       try {
         const response = await getFavorites();
-        console.log("API Response:", response);
         setFavorites(response.data);
-        console.log("Danh sách yêu thích:", response.data);
+        console.log(response.data);
       } catch (err) {
         console.error("Error fetching favorites:", err);
-        setError("Không thể tải danh sách yêu thích.");
+        setError("Danh sách yêu thích trống");
       } finally {
         setLoading(false);
       }
@@ -29,6 +27,17 @@ const FavoritesPage = () => {
       fetchFavorites();
     }
   }, [user]);
+
+  const handleDeleteFavorite = async (favoriteId) => {
+    try {
+      await removeFavourite(favoriteId); // Gọi API xóa với favoriteId
+      setFavorites(favorites.filter((favorite) => favorite._id !== favoriteId)); // Cập nhật danh sách
+      toast.success("Đã xóa khỏi mục yêu thích!");
+    } catch (err) {
+      console.error("Error deleting favorite:", err);
+      toast.error("Không thể xóa mục yêu thích. Vui lòng thử lại!");
+    }
+  };
 
   if (loading) {
     return <div style={loadingStyle}>Đang tải...</div>;
@@ -45,18 +54,36 @@ const FavoritesPage = () => {
         <div style={listStyle}>
           {favorites.map((room) => (
             <div key={room.id} style={cardStyle}>
-              <img src={room.image} alt={room.title} style={imageStyle} />
+              <Link
+                key={room.id_post._id}
+                to={`/listings/${room.id_post._id}`}
+                className="flex space-x-4 group"
+              >
+                <img
+                  src={room.id_post.images?.[0]?.url}
+                  alt={room.title}
+                  style={imageStyle}
+                />
+              </Link>
               <div style={contentStyle}>
-                <h2 style={titleStyle}>{room.id_post}</h2>
+                <h2 style={titleStyle}>{room.id_post.title}</h2>
                 <p style={priceStyle}>
-                  {room.price.toLocaleString("vi-VN")} VNĐ/tháng
+                  {room.id_post.price.toLocaleString("vi-VN")} VNĐ/tháng
                 </p>
                 <p style={infoStyle}>
-                  <strong>Chủ trọ:</strong> {room.id_user_rent}
+                  <strong>Chủ trọ:</strong> {room.id_post.landlord.username}
                 </p>
                 <p style={infoStyle}>
-                  <strong>Địa chỉ:</strong> {room.location}
+                  <strong>Địa chỉ: </strong>
+                  {room.id_post.location.address}, {room.id_post.location.ward},{" "}
+                  {room.id_post.location.district}, {room.id_post.location.city}
                 </p>
+                <button
+                  style={deleteButtonStyle}
+                  onClick={() => handleDeleteFavorite(room._id)}
+                >
+                  Xóa
+                </button>
               </div>
             </div>
           ))}
@@ -69,6 +96,21 @@ const FavoritesPage = () => {
 };
 
 // Inline styles
+const deleteButtonStyle = {
+  marginTop: "10px",
+  backgroundColor: "#dc3545",
+  color: "#fff",
+  border: "none",
+  borderRadius: "5px",
+  padding: "8px 12px",
+  cursor: "pointer",
+  fontSize: "14px",
+};
+
+deleteButtonStyle.hover = {
+  backgroundColor: "#c82333",
+};
+
 const containerStyle = {
   maxWidth: "1200px",
   margin: "0 auto",

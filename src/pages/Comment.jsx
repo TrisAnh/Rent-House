@@ -5,6 +5,7 @@ import {
   faTrash,
   faReply,
   faUser,
+  faStar,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   createComment,
@@ -14,6 +15,7 @@ import {
 } from "../api/comments";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { faStar as regularStar } from "@fortawesome/free-regular-svg-icons";
 
 const Comments = ({ listingId }) => {
   const [comments, setComments] = useState([]);
@@ -23,58 +25,66 @@ const Comments = ({ listingId }) => {
   const { id } = useParams();
   const { user } = useAuth();
   const [houseInfo, setHouseInfo] = useState(null);
+  const [newRating, setNewRating] = useState(5);
 
-  useEffect(() => {
-    const loadComments = async () => {
-      try {
-        const fetchedComments = await getCommentByPostId(id);
-        if (Array.isArray(fetchedComments.data)) {
-          const formattedComments = fetchedComments.data.map((comment) => ({
-            id: comment._id,
-            comment: comment.comment,
-            username: comment.user.username,
-            rating: comment.rating,
-            createdAt: comment.createdAt,
-            updatedAt: comment.updatedAt,
-            house: comment.house._id,
-          }));
-          setComments(formattedComments);
-          console.log("Bình luận của bài viết: ", formattedComments);
-          if (fetchedComments.data.length > 0) {
-            const house = fetchedComments.data[0].house;
-            setHouseInfo(house);
-          }
-        } else {
-          setComments([]);
+  const houseid = listingId;
+
+  const loadComments = async () => {
+    try {
+      const fetchedComments = await getCommentByPostId(id);
+      console.log("fetchedComments: ", fetchedComments.data);
+      if (Array.isArray(fetchedComments.data)) {
+        const formattedComments = fetchedComments.data.map((comment) => ({
+          id: comment._id,
+          comment: comment.comment,
+          username: comment.user?.username || "Unknown User",
+          rating: comment.rating,
+          createdAt: comment.createdAt,
+          updatedAt: comment.updatedAt,
+          house: comment.house._id,
+          userId: comment.user?._id,
+        }));
+        setComments(formattedComments);
+        console.log("Bình luận của bài viết: ", formattedComments);
+        if (fetchedComments.data.length > 0) {
+          const house = fetchedComments.data[0].house;
+          setHouseInfo(house);
         }
-      } catch (error) {
-        console.error("Error fetching comments:", error);
+      } else {
         setComments([]);
       }
-    };
+    } catch (error) {
+      console.log("Error fetching comments:", error);
+      console.error("Error fetching comments:", error);
+      setComments([]);
+    }
+  };
+
+  useEffect(() => {
     loadComments();
-  }, [id]);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (newComment.trim() && houseInfo && houseInfo._id && user && user.id) {
+    if (newComment.trim() && user && user.id) {
       try {
         const newCommentData = {
           id: Math.random().toString(36).substring(7),
           comment: newComment,
           username: user.username,
-          rating: 5,
+          rating: newRating,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          userId: user.id,
         };
 
         setComments((prevComments) => [...prevComments, newCommentData]);
 
         const addedComment = await createComment({
           user: user.id,
-          house: houseInfo._id,
+          house: listingId,
           comment: newComment,
-          rating: 5,
+          rating: newRating,
         });
 
         // Nếu muốn đồng bộ hóa dữ liệu từ server (cập nhật lại bình luận đã gửi)
@@ -97,6 +107,21 @@ const Comments = ({ listingId }) => {
     }
   };
 
+  const StarRating = ({ rating, onRatingChange, readOnly }) => {
+    return (
+      <div className="star-rating">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <FontAwesomeIcon
+            key={star}
+            icon={star <= rating ? faStar : regularStar}
+            className={`star ${readOnly ? "" : "clickable"}`}
+            onClick={() => !readOnly && onRatingChange(star)}
+          />
+        ))}
+      </div>
+    );
+  };
+
   const handleEdit = (id, content) => {
     setEditingId(id);
     setEditContent(content);
@@ -106,23 +131,42 @@ const Comments = ({ listingId }) => {
     try {
       const updatedData = {
         user: user.id,
-        house: houseInfo._id,
-        rating: 5,
+        house: listingId,
+        rating: newRating,
         comment: editContent,
       };
 
+      // Đợi response từ API
       const response = await updateComment(id, updatedData);
 
-      setComments((prevComments) =>
-        prevComments.map((comment) =>
-          comment.id === id ? { ...comment, comment: editContent } : comment
-        )
-      );
+      console.log("R: ", response.data);
 
-      setEditingId(null);
-      setEditContent("");
+      // Kiểm tra response
+      if (response && response.data) {
+        // Update state với dữ liệu từ server
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            comment.id === id
+              ? {
+                  ...comment,
+                  comment: editContent,
+                  rating: newRating,
+                  updatedAt:
+                    response.data.updatedAt || new Date().toISOString(),
+                }
+              : comment
+          )
+        );
+
+        setEditingId(null);
+        setEditContent("");
+        alert("Cập nhật bình luận thành công");
+      } else {
+        throw new Error("Failed to update comment");
+      }
     } catch (error) {
       console.error("Error updating comment:", error);
+      alert("Có lỗi khi cập nhật bình luận");
     }
   };
 
@@ -148,6 +192,10 @@ const Comments = ({ listingId }) => {
     <div className="comments-section">
       <h3 className="comments-title">Bình luận</h3>
       <form onSubmit={handleSubmit} className="comment-form">
+        <div className="rating-container">
+          <label>Đánh giá:</label>
+          <StarRating rating={newRating} onRatingChange={setNewRating} />
+        </div>
         <textarea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
@@ -172,8 +220,16 @@ const Comments = ({ listingId }) => {
                   {new Date(comment.createdAt).toLocaleString("vi-VN")}
                 </span>
               </div>
+              <StarRating rating={comment.rating} readOnly={true} />
               {editingId === comment.id ? (
                 <div className="edit-form">
+                  <div className="rating-container">
+                    <label>Đánh giá:</label>
+                    <StarRating
+                      rating={newRating}
+                      onRatingChange={setNewRating}
+                    />
+                  </div>
                   <textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
@@ -186,7 +242,11 @@ const Comments = ({ listingId }) => {
                     Cập nhật
                   </button>
                   <button
-                    onClick={() => setEditingId(null)}
+                    onClick={() => {
+                      setEditingId(null);
+                      setEditContent("");
+                      setNewRating(5); // Reset rating khi hủy
+                    }}
                     className="cancel-button"
                   >
                     Hủy
@@ -195,23 +255,22 @@ const Comments = ({ listingId }) => {
               ) : (
                 <p className="comment-content">{comment.comment}</p>
               )}
-              <div className="comment-actions">
-                <button
-                  onClick={() => handleEdit(comment.id, comment.comment)}
-                  className="action-button"
-                >
-                  <FontAwesomeIcon icon={faEdit} /> Sửa
-                </button>
-                <button
-                  onClick={() => handleDelete(comment.id)}
-                  className="action-button delete"
-                >
-                  <FontAwesomeIcon icon={faTrash} /> Xóa
-                </button>
-                <button className="action-button">
-                  <FontAwesomeIcon icon={faReply} /> Trả lời
-                </button>
-              </div>
+              {user && user.id === comment.userId && (
+                <div className="comment-actions">
+                  <button
+                    onClick={() => handleEdit(comment.id, comment.comment)}
+                    className="action-button"
+                  >
+                    <FontAwesomeIcon icon={faEdit} /> Sửa
+                  </button>
+                  <button
+                    onClick={() => handleDelete(comment.id)}
+                    className="action-button delete"
+                  >
+                    <FontAwesomeIcon icon={faTrash} /> Xóa
+                  </button>
+                </div>
+              )}
             </div>
           ))
         ) : (
@@ -342,6 +401,35 @@ const Comments = ({ listingId }) => {
         }
         .cancel-button:hover {
           background-color: #c82333;
+        }
+        .star-rating {
+          display: inline-flex;
+          gap: 5px;
+          margin: 10px 0;
+        }
+
+        .star {
+          color: #ffd700;
+          font-size: 1.2em;
+        }
+
+        .star.clickable {
+          cursor: pointer;
+        }
+
+        .star.clickable:hover {
+          transform: scale(1.1);
+        }
+
+        .rating-container {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 10px;
+        }
+
+        .rating-container label {
+          font-weight: bold;
         }
       `}</style>
     </div>

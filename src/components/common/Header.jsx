@@ -132,34 +132,34 @@ const Header = () => {
               Cho thuê phòng trọ
             </Link>
           </li>
-          <li style={navbarItemStyle}>
+          {/* <li style={navbarItemStyle}>
             <Link to="/rent-house" style={linkStyle}>
               Nhà cho thuê
             </Link>
-          </li>
+          </li>*/}
           <li style={navbarItemStyle}>
             <Link to="/apartment" style={linkStyle}>
               Cho thuê căn hộ
             </Link>
           </li>
-          <li style={navbarItemStyle}>
+          {/* <li style={navbarItemStyle}>
             <Link to="/rent-space" style={linkStyle}>
               Cho thuê Mặt bằng
             </Link>
-          </li>
+          </li> */}
           <li style={navbarItemStyle}>
             <Link to="/shared" style={linkStyle}>
               Tìm người ở ghép
             </Link>
           </li>
           <li style={navbarItemStyle}>
-            <Link to="/news" style={linkStyle}>
+            <Link to="/Blog" style={linkStyle}>
               Tin tức
             </Link>
           </li>
           <li style={navbarItemStyle}>
-            <Link to="/pricing" style={linkStyle}>
-              Bảng giá dịch vụ
+            <Link to="/inforbooking" style={linkStyle}>
+              Đặt lịch
             </Link>
           </li>
         </ul>

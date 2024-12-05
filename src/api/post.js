@@ -18,8 +18,8 @@ export const getPostById = (id) => {
 export const getPostByIdLandlord = (landlordId) => {
   return axiosInstance.get(`/post/landlord/${landlordId}`);
 };
-export const updatePostById = (id, updatedData) => {
-  return axiosInstance.put(`/post/${id}`, updatedData);
+export const updatePostById = (id, formData) => {
+  return axiosInstance.put(`/post/${id}`, formData);
 };
 export const deletePostById = (id) => {
   return axiosInstance.delete(`/post/${id}`);

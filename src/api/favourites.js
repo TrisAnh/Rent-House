@@ -12,3 +12,6 @@ export const getAllFavorites = () => {
 export const getFavorites = () => {
   return axiosInstance.get("/favorite/user");
 };
+export const removeFavourite = (id) => {
+  return axiosInstance.delete(`/favorite/delete/${id}`);
+};

@@ -6,6 +6,8 @@ import { useAuth } from "../hooks/useAuth";
 import { toast } from "react-toastify";
 import Comments from "../pages/Comment";
 import ChatBox from "../pages/ChatBox";
+import ReportForm from "./ReportForm"; // Add this import
+import BookingForm from "./BookingForm";
 import {
   FaHeart,
   FaRegHeart,
@@ -25,7 +27,12 @@ import {
   FaPhone,
   FaChevronLeft,
   FaChevronRight,
+  FaFlag,
+  FaWhatsapp,
+  FaZalo,
 } from "react-icons/fa";
+import Map from "./Map";
+import { createFavourite, removeFavourite } from "../api/favourites";
 
 const ListingDetail = () => {
   const { id } = useParams();
@@ -38,6 +45,10 @@ const ListingDetail = () => {
   const [featuredListings, setFeaturedListings] = useState([]);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [showReportForm, setShowReportForm] = useState(false);
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [loadingFavorite, setLoadingFavorite] = useState(false); // Hiệu ứng loading yêu thích
+  const [id_Favorite, setIdFavorite] = useState(null);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -71,17 +82,43 @@ const ListingDetail = () => {
       fetchFeaturedListings();
     }
   }, [id]);
-
   const toggleFavorite = async () => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để thêm vào mục yêu thích!");
+      return;
+    }
+
+    setLoadingFavorite(true); // Bắt đầu hiệu ứng loading
+
     try {
-      setIsFavorited(!isFavorited);
-      toast.success("Mục yêu thích đã được tạo thành công!");
+      if (isFavorited) {
+        // Xóa mục yêu thích dựa trên id_Favorite
+        if (!id_Favorite) {
+          toast.error("Không tìm thấy ID mục yêu thích để xóa!");
+          return;
+        }
+        await removeFavourite(id_Favorite); // Gửi ID yêu thích để xóa
+        setIsFavorited(false);
+        setIdFavorite(null); // Xóa ID khỏi trạng thái
+        toast.success("Đã xóa khỏi mục yêu thích!");
+      } else {
+        // Thêm mục yêu thích
+        const response = await createFavourite(user.id, id);
+        const newIdFavorite = response.data._id; // Lấy ID mới từ API
+        console.log("ID yêu thích mới:", newIdFavorite);
+        setIsFavorited(true);
+        setIdFavorite(newIdFavorite); // Lưu ID vào trạng thái
+        toast.success("Đã thêm vào mục yêu thích!");
+      }
     } catch (err) {
-      console.error("Lỗi khi thêm yêu thích:", err);
-      toast.error("Lỗi khi thêm yêu thích!");
+      console.error("Lỗi khi thao tác với mục yêu thích:", err);
+      toast.error(`Không thể cập nhật yêu thích: ${err.message}`);
+    } finally {
+      setLoadingFavorite(false); // Kết thúc hiệu ứng loading
     }
   };
 
+  // Hàm điều hướng (không cần thay đổi)
   const handleNavigate = (path) => {
     navigate(path);
   };
@@ -98,6 +135,49 @@ const ListingDetail = () => {
     );
   };
 
+  const handleReport = () => {
+    setShowReportForm(true);
+  };
+
+  const handleReportSubmit = async (reportData) => {
+    try {
+      const response = await fetch(
+        "https://be-android-project.onrender.com/api/report/create",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(reportData),
+        }
+      );
+      console.log(reportData);
+
+      if (response.ok) {
+        toast.success("Báo cáo đã được gửi thành công!", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        setShowReportForm(false);
+      } else {
+        throw new Error("Gửi báo cáo thất bại");
+      }
+    } catch (error) {
+      console.error("Lỗi khi gửi báo cáo:", error);
+      toast.error("Có lỗi xảy ra khi gửi báo cáo. Vui lòng thử lại sau.", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    }
+  };
   if (loading)
     return (
       <div className="flex justify-center items-center h-screen">
@@ -123,13 +203,16 @@ const ListingDetail = () => {
                   className={`flex items-center ${
                     isFavorited ? "text-red-500" : "text-gray-500"
                   } hover:text-red-700 transition duration-300`}
+                  disabled={loadingFavorite} // Khóa nút khi đang loading
                 >
                   {isFavorited ? (
                     <FaHeart size={24} />
                   ) : (
                     <FaRegHeart size={24} />
                   )}
-                  <span className="ml-2 text-lg">Yêu thích</span>
+                  <span className="ml-2 text-lg">
+                    {loadingFavorite ? "Đang xử lý..." : "Yêu thích"}
+                  </span>
                 </button>
                 <div className="flex items-center text-indigo-600">
                   <FaEye className="mr-2" size={24} />
@@ -218,6 +301,10 @@ const ListingDetail = () => {
                     icon={FaMapMarkerAlt}
                     label="Phường/Xã"
                     value={listing.location?.ward || "Chưa có thông tin"}
+                  />
+                  <Map
+                    latitude={listing.location.geoLocation?.coordinates[1]}
+                    longitude={listing.location.geoLocation?.coordinates[0]}
                   />
                 </div>
               </div>
@@ -351,21 +438,41 @@ const ListingDetail = () => {
                 {user ? (
                   <>
                     <button
-                      onClick={() => handleNavigate(`/booking/${id}`)}
+                      onClick={() => setShowBookingForm(true)}
                       className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg mb-4 hover:bg-indigo-700 transition duration-300 font-semibold"
                     >
                       Đặt lịch
                     </button>
-                    <button
+                    {/* <button
                       onClick={() => handleNavigate(`/contract`)}
-                      className="w-full bg-green-500 text-white py-3 px-4 rounded-lg hover:bg-green-600 transition duration-300 font-semibold"
+                      className="w-full bg-green-500 text-white py-3 px-4 rounded-lg mb-4 hover:bg-green-600 transition duration-300 font-semibold"
                     >
                       Đặt cọc
+                    </button>*/}
+                    <button
+                      onClick={() => {
+                        const phoneNumber = phone; // Lấy số điện thoại của chủ trọ
+                        if (phoneNumber) {
+                          window.location.href = `https://zalo.me/${phoneNumber}`;
+                        } else {
+                          alert("Số điện thoại của chủ trọ không khả dụng.");
+                        }
+                      }}
+                      className="w-full bg-green-500 text-white py-3 px-4 rounded-lg mb-4 hover:bg-green-600 transition duration-300 font-semibold"
+                    >
+                      Zalo
+                    </button>
+                    <button
+                      onClick={handleReport}
+                      className="w-full bg-red-500 text-white py-3 px-4 rounded-lg hover:bg-red-600 transition duration-300 font-semibold flex items-center justify-center"
+                    >
+                      <FaFlag className="mr-2" />
+                      Báo cáo
                     </button>
                   </>
                 ) : (
                   <p className="text-center text-gray-600 bg-yellow-100 p-4 rounded-lg">
-                    Vui lòng đăng nhập để đặt lịch hoặc đặt cọc.
+                    Vui lòng đăng nhập để đặt lịch, đặt cọc hoặc báo cáo.
                   </p>
                 )}
               </div>
@@ -408,6 +515,25 @@ const ListingDetail = () => {
         </div>
       </div>
       <ChatBox landlord={landlord} />
+      {showReportForm && (
+        <ReportForm
+          onClose={() => setShowReportForm(false)}
+          onSubmit={handleReportSubmit}
+          postId={id}
+          userId={user?.id}
+        />
+      )}
+      {showBookingForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="max-w-md w-full">
+            <BookingForm
+              landlordId={landlord?._id}
+              postId={id}
+              onClose={() => setShowBookingForm(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,6 +1,7 @@
 // src/pages/EditProfile.jsx
 import React, { useState, useEffect } from "react";
 import { updateUser } from "../api/auth";
+import { getUserById } from "../api/users";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import {
@@ -28,17 +29,37 @@ const EditProfile = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [profile, setProfile] = useState(null);
+
+  const fetchProfile = async () => {
+    if (!user || !user.id || !token) {
+      setError("Bạn cần đăng nhập để xem thông tin cá nhân.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await getUserById(user.id, token);
+      const profileData = response.data;
+      setFormData({
+        id: profileData.id || "",
+        username: profileData.username || "",
+        email: profileData.email || "",
+        phone: profileData.phone || "",
+        address: profileData.address || "",
+      });
+      setProfile(profileData);
+    } catch (err) {
+      setError("Không thể tải thông tin người dùng.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (user) {
-      setFormData({
-        username: user.username || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        address: user.address || "",
-      });
-    }
-  }, [user]);
+    fetchProfile();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -60,9 +81,10 @@ const EditProfile = () => {
         token
       );
       const updatedUser = updatedUserResponse.data.user;
-
-      // Cập nhật thông tin người dùng trong state
-      login({ token, user: updatedUser });
+      login({
+        token,
+        user: { ...updatedUser, id: user.id, user_role: user.user_role },
+      });
 
       setMessage("Thông tin của bạn đã được cập nhật thành công.");
       navigate("/profile", { state: { updated: true } });

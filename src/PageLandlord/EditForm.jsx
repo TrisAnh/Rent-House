@@ -1,374 +1,405 @@
-import React, { useState, useEffect } from "react";
-import { updatePostById, getPostById } from "../api/post";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { X } from "lucide-react";
 
-const ListingEditForm = ({ isOpen, onClose }) => {
-  const [editedListing, setEditedListing] = useState({
-    title: "",
-    description: "",
-    price: "",
-    size: "",
-    roomType: "Single",
-    location: { address: "", ward: "", district: "", city: "" },
-    amenities: {
-      hasWifi: false,
-      hasAirConditioner: false,
-      hasKitchen: false,
-      hasParking: false,
-      hasElevator: false,
-    },
-    additionalCosts: {
-      electricity: "",
-      water: "",
-      internet: "",
-      cleaning: "",
-    },
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const { id } = useParams();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchListing = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await getPostById(id);
-        if (response.status === 200) {
-          setEditedListing(response.data);
-        } else {
-          setError("Không tìm thấy bài đăng.");
-        }
-      } catch (error) {
-        setError("Có lỗi xảy ra, vui lòng thử lại.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchListing();
+const EditForm = ({ listing, onSave, onCancel }) => {
+  const [formData, setFormData] = useState(
+    listing || {
+      title: "",
+      description: "",
+      price: 0,
+      location: {
+        address: "",
+        city: "",
+        district: "",
+        ward: "",
+      },
+      landlord: "",
+      roomType: "Single",
+      size: 0,
+      availability: true,
+      amenities: {
+        wifi: false,
+        airConditioner: false,
+        heater: false,
+        kitchen: false,
+        parking: false,
+      },
+      additionalCosts: {
+        electricity: 0,
+        water: 0,
+        internet: 0,
+        cleaning: 0,
+        security: 0,
+      },
+      images: [],
+      videos: [],
     }
-  }, [id]);
+  );
 
-  const handleSaveListing = async (updatedListing) => {
-    try {
-      const response = await updatePostById(id, updatedListing);
-      if (response.status === 200) {
-        alert("Cập nhật thành công!");
-        navigate(`/listings/${id}`);
-      } else {
-        throw new Error("Cập nhật thất bại");
-      }
-    } catch (error) {
-      alert("Có lỗi xảy ra, vui lòng thử lại.");
-    }
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
-  const handleInputChange = (e) => {
+  const handleLocationChange = (e) => {
     const { name, value } = e.target;
-    setEditedListing((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleAmenityChange = (amenity) => {
-    setEditedListing((prev) => ({
-      ...prev,
-      amenities: { ...prev.amenities, [amenity]: !prev.amenities[amenity] },
+    setFormData((prevData) => ({
+      ...prevData,
+      location: {
+        ...prevData.location,
+        [name]: value,
+      },
     }));
   };
 
-  const handleAdditionalCostChange = (cost, value) => {
-    setEditedListing((prev) => ({
-      ...prev,
-      additionalCosts: { ...prev.additionalCosts, [cost]: value },
+  const handleAmenitiesChange = (e) => {
+    const { name, checked } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      amenities: {
+        ...prevData.amenities,
+        [name]: checked,
+      },
     }));
   };
 
-  const handleLocationChange = (field, value) => {
-    setEditedListing((prev) => ({
-      ...prev,
-      location: { ...prev.location, [field]: value },
+  const handleAdditionalCostsChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      additionalCosts: {
+        ...prevData.additionalCosts,
+        [name]: parseFloat(value),
+      },
     }));
   };
 
-  //if (!isOpen) return null; // Ẩn form khi isOpen = false
-  if (isLoading) return <div>Đang tải...</div>;
-  if (error) return <div>Lỗi: {error}</div>;
+  const handleMediaChange = (e, type) => {
+    const files = Array.from(e.target.files);
+    const mediaItems = files.map((file) => ({
+      url: URL.createObjectURL(file),
+      public_id: file.name, // This is a placeholder. In a real app, you'd get this from your backend after upload
+    }));
+    setFormData((prevData) => ({
+      ...prevData,
+      [type]: [...prevData[type], ...mediaItems],
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 1000,
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "white",
-          padding: "20px",
-          borderRadius: "8px",
-          maxWidth: "600px",
-          width: "100%",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          position: "relative",
-        }}
-      >
-        {/* Nút đóng */}
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            top: "10px",
-            right: "10px",
-            background: "none",
-            border: "none",
-            fontSize: "20px",
-            cursor: "pointer",
-          }}
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div>
+        <label
+          htmlFor="title"
+          className="block text-sm font-medium text-gray-700"
         >
-          &times;
-        </button>
+          Tiêu đề
+        </label>
+        <input
+          type="text"
+          id="title"
+          name="title"
+          value={formData.title}
+          onChange={handleChange}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          required
+        />
+      </div>
 
-        <h2 style={{ marginBottom: "20px" }}>Chỉnh sửa bài đăng</h2>
-        <div style={{ display: "grid", gap: "16px" }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 3fr",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <label htmlFor="title">Tiêu đề</label>
-            <input
-              id="title"
-              name="title"
-              value={editedListing.title}
-              onChange={handleInputChange}
-              style={{ width: "100%", padding: "8px" }}
-            />
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 3fr",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <label htmlFor="description">Mô tả</label>
-            <textarea
-              id="description"
-              name="description"
-              value={editedListing.description}
-              onChange={handleInputChange}
-              style={{ width: "100%", padding: "8px", height: "100px" }}
-            />
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 3fr",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <label htmlFor="price">Giá (VND)</label>
-            <input
-              id="price"
-              name="price"
-              type="number"
-              value={editedListing.price}
-              onChange={handleInputChange}
-              style={{ width: "100%", padding: "8px" }}
-            />
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 3fr",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <label htmlFor="size">Kích thước (m²)</label>
-            <input
-              id="size"
-              name="size"
-              type="number"
-              value={editedListing.size}
-              onChange={handleInputChange}
-              style={{ width: "100%", padding: "8px" }}
-            />
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 3fr",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <label htmlFor="roomType">Loại phòng</label>
-            <select
-              id="roomType"
-              name="roomType"
-              value={editedListing.roomType}
-              onChange={handleInputChange}
-              style={{ width: "100%", padding: "8px" }}
-            >
-              <option value="studio">Studio</option>
-              <option value="apartment">Căn hộ</option>
-              <option value="house">Nhà riêng</option>
-            </select>
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 3fr",
-              alignItems: "start",
-              gap: "8px",
-            }}
-          >
-            <label>Địa chỉ</label>
-            <div style={{ display: "grid", gap: "8px" }}>
-              <input
-                placeholder="Địa chỉ"
-                value={editedListing.location.address}
-                onChange={(e) =>
-                  handleLocationChange("address", e.target.value)
-                }
-                style={{ width: "100%", padding: "8px" }}
-              />
-              <input
-                placeholder="Phường/Xã"
-                value={editedListing.location.ward}
-                onChange={(e) => handleLocationChange("ward", e.target.value)}
-                style={{ width: "100%", padding: "8px" }}
-              />
-              <input
-                placeholder="Quận/Huyện"
-                value={editedListing.location.district}
-                onChange={(e) =>
-                  handleLocationChange("district", e.target.value)
-                }
-                style={{ width: "100%", padding: "8px" }}
-              />
-              <input
-                placeholder="Thành phố"
-                value={editedListing.location.city}
-                onChange={(e) => handleLocationChange("city", e.target.value)}
-                style={{ width: "100%", padding: "8px" }}
-              />
-            </div>
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 3fr",
-              alignItems: "start",
-              gap: "8px",
-            }}
-          >
-            <label>Tiện nghi</label>
-            <div style={{ display: "grid", gap: "8px" }}>
-              {[
-                "hasWifi",
-                "hasAirConditioner",
-                "hasKitchen",
-                "hasParking",
-                "hasElevator",
-              ].map((amenity) => (
-                <label
-                  key={amenity}
-                  style={{ display: "flex", alignItems: "center" }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={editedListing.amenities[amenity]}
-                    onChange={() => handleAmenityChange(amenity)}
-                    style={{ marginRight: "8px" }}
-                  />
-                  {amenity === "hasWifi"
-                    ? "Wifi"
-                    : amenity === "hasAirConditioner"
-                    ? "Điều hòa"
-                    : amenity === "hasKitchen"
-                    ? "Bếp"
-                    : amenity === "hasParking"
-                    ? "Đỗ xe"
-                    : "Thang máy"}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 3fr",
-              alignItems: "start",
-              gap: "8px",
-            }}
-          >
-            <label>Chi phí thêm (VND)</label>
-            <div style={{ display: "grid", gap: "8px" }}>
-              {["electricity", "water", "internet", "cleaning"].map((cost) => (
-                <input
-                  key={cost}
-                  placeholder={
-                    cost === "electricity"
-                      ? "Điện"
-                      : cost === "water"
-                      ? "Nước"
-                      : cost === "internet"
-                      ? "Internet"
-                      : "Dọn dẹp"
-                  }
-                  type="number"
-                  value={editedListing.additionalCosts[cost]}
-                  onChange={(e) =>
-                    handleAdditionalCostChange(cost, e.target.value)
-                  }
-                  style={{ width: "100%", padding: "8px" }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-        <div
-          style={{
-            marginTop: "20px",
-            display: "flex",
-            justifyContent: "flex-end",
-          }}
+      <div>
+        <label
+          htmlFor="description"
+          className="block text-sm font-medium text-gray-700"
         >
-          <button
-            onClick={() => handleSaveListing(editedListing)}
-            style={{
-              padding: "8px 16px",
-              backgroundColor: "#4CAF50",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
-            Lưu thay đổi
-          </button>
+          Mô tả
+        </label>
+        <textarea
+          id="description"
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          rows="3"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          required
+        ></textarea>
+      </div>
+
+      <div>
+        <label
+          htmlFor="price"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Giá thuê
+        </label>
+        <input
+          type="number"
+          id="price"
+          name="price"
+          value={formData.price}
+          onChange={handleChange}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          required
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        {Object.keys(formData.location).map((key) => (
+          <div key={key}>
+            <label
+              htmlFor={key}
+              className="block text-sm font-medium text-gray-700"
+            >
+              {key.charAt(0).toUpperCase() + key.slice(1)}
+            </label>
+            <input
+              type="text"
+              id={key}
+              name={key}
+              value={formData.location[key]}
+              onChange={handleLocationChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+            />
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <label
+          htmlFor="landlord"
+          className="block text-sm font-medium text-gray-700"
+        >
+          ID của người cho thuê
+        </label>
+        <input
+          type="text"
+          id="landlord"
+          name="landlord"
+          value={formData.landlord}
+          onChange={handleChange}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          required
+        />
+      </div>
+
+      <div>
+        <label
+          htmlFor="roomType"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Loại phòng
+        </label>
+        <select
+          id="roomType"
+          name="roomType"
+          value={formData.roomType}
+          onChange={handleChange}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          required
+        >
+          <option value="Single">Single</option>
+          <option value="Double">Double</option>
+          <option value="Studio">Studio</option>
+          <option value="Apartment">Apartment</option>
+        </select>
+      </div>
+
+      <div>
+        <label
+          htmlFor="size"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Diện tích (m2)
+        </label>
+        <input
+          type="number"
+          id="size"
+          name="size"
+          value={formData.size}
+          onChange={handleChange}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="flex items-center">
+          <input
+            type="checkbox"
+            name="availability"
+            checked={formData.availability}
+            onChange={handleChange}
+            className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+          <span className="ml-2 text-sm text-gray-700">Còn trống</span>
+        </label>
+      </div>
+
+      <div>
+        <span className="block text-sm font-medium text-gray-700 mb-2">
+          Tiện nghi
+        </span>
+        <div className="grid grid-cols-2 gap-4">
+          {Object.keys(formData.amenities).map((amenity) => (
+            <label key={amenity} className="flex items-center">
+              <input
+                type="checkbox"
+                name={amenity}
+                checked={formData.amenities[amenity]}
+                onChange={handleAmenitiesChange}
+                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+              <span className="ml-2 text-sm text-gray-700">
+                {amenity.charAt(0).toUpperCase() + amenity.slice(1)}
+              </span>
+            </label>
+          ))}
         </div>
       </div>
-    </div>
+
+      <div>
+        <span className="block text-sm font-medium text-gray-700 mb-2">
+          Chi phí bổ sung
+        </span>
+        <div className="grid grid-cols-2 gap-4">
+          {Object.keys(formData.additionalCosts).map((cost) => (
+            <div key={cost}>
+              <label
+                htmlFor={cost}
+                className="block text-sm font-medium text-gray-700"
+              >
+                {cost.charAt(0).toUpperCase() + cost.slice(1)}
+              </label>
+              <input
+                type="number"
+                id={cost}
+                name={cost}
+                value={formData.additionalCosts[cost]}
+                onChange={handleAdditionalCostsChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label
+          htmlFor="images"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Hình ảnh
+        </label>
+        <input
+          type="file"
+          id="images"
+          name="images"
+          onChange={(e) => handleMediaChange(e, "images")}
+          multiple
+          accept="image/*"
+          className="mt-1 block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-md file:border-0
+            file:text-sm file:font-semibold
+            file:bg-blue-50 file:text-blue-700
+            hover:file:bg-blue-100"
+        />
+        <div className="mt-2 flex flex-wrap gap-2">
+          {formData.images.map((image, index) => (
+            <div key={index} className="relative">
+              <img
+                src={image.url}
+                alt={`Uploaded ${index + 1}`}
+                className="w-20 h-20 object-cover rounded"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    images: prev.images.filter((_, i) => i !== index),
+                  }))
+                }
+                className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label
+          htmlFor="videos"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Video
+        </label>
+        <input
+          type="file"
+          id="videos"
+          name="videos"
+          onChange={(e) => handleMediaChange(e, "videos")}
+          multiple
+          accept="video/*"
+          className="mt-1 block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-md file:border-0
+            file:text-sm file:font-semibold
+            file:bg-blue-50 file:text-blue-700
+            hover:file:bg-blue-100"
+        />
+        <div className="mt-2 flex flex-wrap gap-2">
+          {formData.videos.map((video, index) => (
+            <div key={index} className="relative">
+              <video
+                src={video.url}
+                className="w-20 h-20 object-cover rounded"
+                controls
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    videos: prev.videos.filter((_, i) => i !== index),
+                  }))
+                }
+                className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex justify-end space-x-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          Hủy
+        </button>
+        <button
+          type="submit"
+          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          Lưu thay đổi
+        </button>
+      </div>
+    </form>
   );
 };
 
-export default ListingEditForm;
+export default EditForm;

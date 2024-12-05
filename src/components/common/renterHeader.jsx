@@ -58,11 +58,11 @@ const RenterHeader = () => {
             </Link>
           </li>
           <li style={navbarItemStyle}>
-            <Link to="/inforBooking" style={linkStyle}>
+            <Link to="/booking-details" style={linkStyle}>
               🗓️ Quản lý đặt lịch
             </Link>
           </li>
-          <li style={navbarItemStyle}>
+          {/*} <li style={navbarItemStyle}>
             <Link to="/messages" style={linkStyle}>
               💬 Tin nhắn
             </Link>
@@ -70,8 +70,8 @@ const RenterHeader = () => {
           <li style={navbarItemStyle}>
             <Link to="/analytics" style={linkStyle}>
               📊 Thống kê
-            </Link>
-          </li>
+            </Link>*
+          </li>*/}
         </ul>
       </nav>
     </header>

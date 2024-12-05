@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { createRequest } from "../api/request";
 import { getPostById } from "../api/post";
 
-const RoomBookingForm = () => {
+const RoomBookingForm = ({ onClose }) => {
   const [date, setDate] = useState(null);
   const [time, setTime] = useState("");
   const { id } = useParams();
@@ -15,7 +15,7 @@ const RoomBookingForm = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
+
   useEffect(() => {
     const fetchPostDetails = async () => {
       try {
@@ -49,55 +49,56 @@ const RoomBookingForm = () => {
     try {
       const response = await createRequest(requestData);
       alert("Đặt lịch thành công!");
-      navigate(`/listings/${id}`); // Quay lại trang bài đăng
-      console.log(response);
+      onClose();
     } catch (error) {
       console.error("Error creating request:", error);
       alert("Đặt lịch không thành công. Vui lòng thử lại.");
     }
   };
 
-  if (loading) return <p>Đang tải...</p>;
-  if (error) return <p>{error}</p>;
+  if (loading) return <p style={loadingStyle}>Đang tải...</p>;
+  if (error) return <p style={errorStyle}>{error}</p>;
 
   return (
     <div style={containerStyle}>
+      <button onClick={onClose} style={closeButtonStyle}>
+        X
+      </button>
       <h2 style={headerStyle}>{postDetails.title}</h2>
       <p style={subHeaderStyle}>Chọn ngày và giờ để đặt lịch</p>
       <div style={imageContainerStyle}>
-        {postDetails.images.map((image, index) => (
-          <img
-            key={index}
-            src={image.url}
-            alt={`Hình ảnh phòng ${index + 1}`}
-            style={imageStyle}
-          />
-        ))}
+        <img
+          src={postDetails.images[0]?.url || "/placeholder.svg"}
+          alt="Hình ảnh phòng"
+          style={imageStyle}
+        />
       </div>
       <div style={priceStyle}>{postDetails.price.toLocaleString()} VND</div>
-      <DatePicker
-        selected={date}
-        onChange={(date) => setDate(date)}
-        dateFormat="dd/MM/yyyy"
-        placeholderText="Chọn ngày"
-        customInput={<input style={inputStyle} />}
-      />
-      <select
-        value={time}
-        onChange={(e) => setTime(e.target.value)}
-        style={inputStyle}
-      >
-        <option value="">Chọn giờ</option>
-        <option value="09:00">09:00</option>
-        <option value="10:00">10:00</option>
-        <option value="11:00">11:00</option>
-        <option value="14:00">14:00</option>
-        <option value="15:00">15:00</option>
-        <option value="16:00">16:00</option>
-      </select>
-      <button onClick={handleBooking} style={buttonStyle}>
-        Đặt Lịch
-      </button>
+      <form onSubmit={handleBooking} style={formStyle}>
+        <DatePicker
+          selected={date}
+          onChange={(date) => setDate(date)}
+          dateFormat="dd/MM/yyyy"
+          placeholderText="Chọn ngày"
+          customInput={<input style={inputStyle} />}
+        />
+        <select
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+          style={inputStyle}
+        >
+          <option value="">Chọn giờ</option>
+          <option value="09:00">09:00</option>
+          <option value="10:00">10:00</option>
+          <option value="11:00">11:00</option>
+          <option value="14:00">14:00</option>
+          <option value="15:00">15:00</option>
+          <option value="16:00">16:00</option>
+        </select>
+        <button type="submit" style={buttonStyle}>
+          Đặt Lịch
+        </button>
+      </form>
     </div>
   );
 };
@@ -110,6 +111,17 @@ const containerStyle = {
   fontFamily: "Arial, sans-serif",
   backgroundColor: "#fff",
   borderRadius: "8px",
+  position: "relative",
+};
+
+const closeButtonStyle = {
+  position: "absolute",
+  top: "10px",
+  right: "10px",
+  background: "none",
+  border: "none",
+  fontSize: "20px",
+  cursor: "pointer",
 };
 
 const headerStyle = {
@@ -124,8 +136,6 @@ const subHeaderStyle = {
 };
 
 const imageContainerStyle = {
-  display: "flex",
-  flexDirection: "column", // Sắp xếp hình ảnh theo cột
   marginBottom: "20px",
 };
 
@@ -134,7 +144,6 @@ const imageStyle = {
   height: "200px",
   objectFit: "cover",
   borderRadius: "8px",
-  marginBottom: "10px",
 };
 
 const priceStyle = {
@@ -143,10 +152,15 @@ const priceStyle = {
   marginBottom: "20px",
 };
 
+const formStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "10px",
+};
+
 const inputStyle = {
   width: "100%",
   padding: "10px",
-  marginBottom: "10px",
   border: "1px solid #ccc",
   borderRadius: "4px",
   fontSize: "16px",
@@ -161,6 +175,17 @@ const buttonStyle = {
   borderRadius: "4px",
   cursor: "pointer",
   fontSize: "16px",
+};
+
+const loadingStyle = {
+  textAlign: "center",
+  padding: "20px",
+};
+
+const errorStyle = {
+  textAlign: "center",
+  color: "red",
+  padding: "20px",
 };
 
 export default RoomBookingForm;

@@ -22,6 +22,7 @@ const Profile = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
+  const [message, setMessage] = useState("");
 
   const fetchProfile = async () => {
     if (!user || !user.id || !token) {
@@ -56,11 +57,11 @@ const Profile = () => {
 
   useEffect(() => {
     fetchProfile();
-  }, [user, token]);
+  }, []);
 
   useEffect(() => {
     if (location.state && location.state.updated) {
-      setError("Thông tin cá nhân đã được cập nhật thành công.");
+      setMessage("Thông tin cá nhân đã được cập nhật thành công.");
       fetchProfile();
     }
   }, [location.state]);
@@ -71,6 +72,7 @@ const Profile = () => {
   if (loading) {
     return (
       <Container>
+        {message && <div className="success-message">{message}</div>}
         <Box>
           <Title>Thông Tin Cá Nhân</Title>
           <p style={{ textAlign: "center" }}>Đang tải...</p>
@@ -82,6 +84,11 @@ const Profile = () => {
   return (
     <Container>
       <Box>
+        {message && (
+          <div className="success-message" style={{ textAlign: "center" }}>
+            {message}
+          </div>
+        )}
         <Title>Thông Tin Cá Nhân</Title>
         {error && <MessageText type="error">{error}</MessageText>}
         {profile && renderProfileInfo(profile)}

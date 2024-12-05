@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { useLocation } from "react-router-dom";
+import axios from "axios";
 import {
   getPostByRoomType,
   getPostByDistrict,
@@ -15,6 +16,7 @@ import {
   FaSnowflake,
   FaUtensils,
   faElevator,
+  FaRoute,
 } from "react-icons/fa";
 import { colors } from "../styled/colors";
 
@@ -335,6 +337,46 @@ const Listings = () => {
     }
   };
 
+  const fetchListingNearBy = async (lat, lon, maxDistance) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get(
+        "https://be-android-project.onrender.com/api/post/nearby",
+        {
+          params: {
+            lat,
+            lon,
+            maxDistance,
+          },
+        }
+      );
+
+      console.log("Data" + response.data);
+      if (Array.isArray(response.data)) {
+        setListings(response.data);
+        setTotalPages(Math.ceil(response.data.length / ITEMS_PER_PAGE));
+      } else {
+        console.error(
+          "Error: Invalid response data from API for near by",
+          error
+        );
+        setError(
+          `Không thể tải danh sách phòng loại gần đây. Vui lòng thử lại sau.`
+        );
+        setListings([]);
+      }
+      setRoomType("NearBy");
+      setCurrentPage(1);
+    } catch (err) {
+      console.error(`Error fetching listings for near by`, err);
+      setError(`Không thể tải danh sách phòng gần đây. Vui lòng thử lại sau.`);
+      setListings([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
     window.scrollTo(0, 0);
@@ -370,6 +412,13 @@ const Listings = () => {
           onClick={() => fetchListingsByRoomType("Double")}
         >
           Phòng đôi
+        </FilterButton>
+
+        <FilterButton
+          $active={roomType === "NearBy"}
+          onClick={() => fetchListingNearBy(10.8411434, 106.7759268, 5000)}
+        >
+          Phòng trọ gần đây
         </FilterButton>
       </FiltersContainer>
       <FiltersContainer>
@@ -428,6 +477,15 @@ const Listings = () => {
                 {listing.amenities.hasKitchen && <FaUtensils title="Nhà bếp" />}
                 {listing.amenities.hasElevator && (
                   <faElevator title="Thang máy" />
+                )}
+              </ListingDetail>
+              <ListingDetail>
+                {listing.distance && (
+                  <>
+                    <FaRoute />
+                    <strong>Khoảng cách:</strong>{" "}
+                    {`${parseFloat(listing.distance).toFixed(2)} km`}
+                  </>
                 )}
               </ListingDetail>
               <ViewDetailButton to={`/listings/${listing._id}`}>

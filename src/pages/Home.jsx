@@ -26,6 +26,9 @@ const Home = () => {
   const [searchParams, setSearchParams] = useState({
     title: "",
     location: "",
+    district: "",
+    ward: "",
+    city: "",
     roomType: "",
     priceMin: "",
     priceMax: "",
@@ -35,6 +38,7 @@ const Home = () => {
   const [postsByRoomType, setPostsByRoomType] = useState({});
   const [currentPage, setCurrentPage] = useState({});
   const navigate = useNavigate();
+  const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoadingTopViews(true);
@@ -74,24 +78,67 @@ const Home = () => {
 
     fetchInitialData();
   }, []);
+  const handleSearchChange = (e) => {
+    const { name, value } = e.target;
+    setSearchParams((prevParams) => ({ ...prevParams, [name]: value }));
+  };
+
+  const validateSearchParams = () => {
+    const errors = {};
+    if (searchParams.priceMin && Number(searchParams.priceMin) < 0) {
+      errors.priceMin = "Giá tối thiểu không được âm";
+    }
+    if (searchParams.priceMax && Number(searchParams.priceMax) < 0) {
+      errors.priceMax = "Giá tối đa không được âm";
+    }
+    if (
+      searchParams.priceMin &&
+      searchParams.priceMax &&
+      Number(searchParams.priceMin) > Number(searchParams.priceMax)
+    ) {
+      errors.price = "Giá tối thiểu không được lớn hơn giá tối đa";
+    }
+    if (searchParams.priceMin && Number(searchParams.priceMin) > 1000000000) {
+      errors.priceMin = "Giá tối thiểu quá lớn";
+    }
+    if (searchParams.priceMax && Number(searchParams.priceMax) > 1000000000) {
+      errors.priceMax = "Giá tối đa quá lớn";
+    }
+    return errors;
+  };
 
   const handleSearchSubmit = async (e) => {
     e.preventDefault();
+    const errors = validateSearchParams();
+    if (Object.keys(errors).length > 0) {
+      setError(Object.values(errors).join(", "));
+      return;
+    }
     setLoadingSearch(true);
+    setError(null);
     try {
-      const response = await searchPost(searchParams);
-      setSearchResults(response?.data || []);
+      const response = await searchPost({
+        title: searchParams.title,
+        location: searchParams.location,
+        district: searchParams.district,
+        ward: searchParams.ward,
+        city: searchParams.city,
+        roomType: searchParams.roomType,
+        priceMin: searchParams.priceMin
+          ? Number(searchParams.priceMin)
+          : undefined,
+        priceMax: searchParams.priceMax
+          ? Number(searchParams.priceMax)
+          : undefined,
+      });
+      setSearchResults(Array.isArray(response?.data) ? response.data : []);
+      console.log("Kết quả tìm kiếm:", response.data);
     } catch (error) {
       console.error("Search error:", error);
-      setError("An error occurred while searching. Please try again.");
+      setError("Đã xảy ra lỗi khi tìm kiếm. Vui lòng thử lại sau.");
     } finally {
       setLoadingSearch(false);
     }
-  };
-
-  const handleSearchChange = (e) => {
-    const { name, value } = e.target;
-    setSearchParams((prev) => ({ ...prev, [name]: value }));
   };
 
   const handlePrevPage = (roomType) => {
@@ -232,15 +279,19 @@ const Home = () => {
             Kênh thông tin phòng trọ số 1 Việt Nam
           </p>
         </header>
-
         <form
           onSubmit={handleSearchSubmit}
           className="mb-12 bg-white p-8 rounded-2xl shadow-xl border border-blue-100"
         >
+          {error && (
+            <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
+              {error}
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <input
               type="text"
-              placeholder="Tìm kiếm..."
+              placeholder="Tiêu đề"
               name="title"
               value={searchParams.title}
               onChange={handleSearchChange}
@@ -248,9 +299,35 @@ const Home = () => {
             />
             <input
               type="text"
-              placeholder="Địa điểm"
+              placeholder="Địa chỉ"
               name="location"
               value={searchParams.location}
+              onChange={handleSearchChange}
+              className="border border-gray-300 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              type="text"
+              placeholder="Quận"
+              name="district"
+              value={searchParams.district}
+              onChange={handleSearchChange}
+              className="border border-gray-300 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <input
+              type="text"
+              placeholder="Phường"
+              name="ward"
+              value={searchParams.ward}
+              onChange={handleSearchChange}
+              className="border border-gray-300 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              type="text"
+              placeholder="Thành phố"
+              name="city"
+              value={searchParams.city}
               onChange={handleSearchChange}
               className="border border-gray-300 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -293,21 +370,67 @@ const Home = () => {
             </button>
           </div>
         </form>
-
         {loadingSearch ? (
           <div className="text-center py-12 text-2xl text-blue-600">
             Đang tìm kiếm...
           </div>
-        ) : searchResults.length > 0 ? (
+        ) : (
           <section className="mb-16">
             <h2 className="text-3xl font-bold mb-6 text-blue-900">
               Kết quả tìm kiếm
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {renderPropertyCards(searchResults, "search")}
-            </div>
+            {searchResults.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                {searchResults.map((property) => (
+                  <div
+                    key={property._id}
+                    className="bg-white rounded-xl shadow-lg overflow-hidden transform transition duration-300 hover:scale-105 w-full"
+                  >
+                    <Link to={`/listings/${property._id}`}>
+                      <div className="relative">
+                        <img
+                          src={property.images[0]?.url || "/placeholder.svg"}
+                          alt={property.title}
+                          className="w-full h-60 object-cover"
+                        />
+                      </div>
+                    </Link>
+                    <div className="p-4">
+                      <h3 className="text-xl font-bold mb-2 text-gray-800 truncate">
+                        {property.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2 flex items-center">
+                        <FaMapMarkerAlt className="mr-1 text-blue-500" />
+                        {property.location?.district}, {property.location?.city}
+                      </p>
+                      <p className="text-2xl font-bold text-blue-600 mb-2">
+                        {property.price?.toLocaleString()} đ/tháng
+                      </p>
+                      <div className="flex items-center text-sm text-yellow-400 mb-2">
+                        {[...Array(5)].map((_, i) => (
+                          <span
+                            key={i}
+                            className={
+                              i < Math.round(property.averageRating || 0)
+                                ? "text-yellow-400"
+                                : "text-gray-300"
+                            }
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-2xl text-gray-600">
+                Không tìm thấy kết quả phù hợp.
+              </div>
+            )}
           </section>
-        ) : null}
+        )}
 
         <section className="mb-16">
           <div className="flex justify-between items-center mb-6">
@@ -380,7 +503,7 @@ const Home = () => {
           </section>
         ))}
 
-        <section className="mb-16">
+        {/*<section className="mb-16">
           <h2 className="text-3xl font-bold mb-6 text-blue-900">
             Chia sẻ mẹo hay và kinh nghiệm
           </h2>
@@ -415,7 +538,7 @@ const Home = () => {
               </a>
             </div>
           </div>
-        </section>
+        </section>*/}
 
         <footer className="mt-16 text-center bg-blue-900 text-white p-12 rounded-2xl shadow-xl">
           <h2 className="text-3xl font-bold mb-6">Liên hệ với chúng tôi</h2>
