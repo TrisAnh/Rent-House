@@ -1,24 +1,25 @@
-// src/pages/EditProfile.jsx
 import React, { useState, useEffect } from "react";
 import { updateUser } from "../api/auth";
 import { getUserById } from "../api/users";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import {
-  Container,
-  Box,
+  PageContainer,
+  EditProfileCard,
   Title,
   Form,
+  InputGroup,
+  Label,
   Input,
   Button,
-  Label,
   MessageText,
-  Card,
   Icon,
+  BackButton
 } from "../styled/EditProfileStyled";
+import { FaUser, FaEnvelope, FaPhone, FaHome, FaArrowLeft } from 'react-icons/fa';
 
 const EditProfile = () => {
-  const { user, token, setUser, login } = useAuth();
+  const { user, token, login } = useAuth();
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -29,12 +30,10 @@ const EditProfile = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [profile, setProfile] = useState(null);
 
   const fetchProfile = async () => {
     if (!user || !user.id || !token) {
-      setError("Bạn cần đăng nhập để xem thông tin cá nhân.");
-      setLoading(false);
+      setError("Bạn cần đăng nhập để chỉnh sửa thông tin cá nhân.");
       return;
     }
 
@@ -48,12 +47,9 @@ const EditProfile = () => {
         phone: profileData.phone || "",
         address: profileData.address || "",
       });
-      setProfile(profileData);
     } catch (err) {
       setError("Không thể tải thông tin người dùng.");
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -67,19 +63,15 @@ const EditProfile = () => {
     setError("");
     setMessage("");
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setLoading(true);
     setError("");
     setMessage("");
 
     try {
-      const updatedUserResponse = await updateUser(
-        user.id,
-        { ...formData },
-        token
-      );
+      const updatedUserResponse = await updateUser(user.id, { ...formData }, token);
       const updatedUser = updatedUserResponse.data.user;
       login({
         token,
@@ -89,8 +81,7 @@ const EditProfile = () => {
       setMessage("Thông tin của bạn đã được cập nhật thành công.");
       navigate("/profile", { state: { updated: true } });
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.msg || "Lỗi máy chủ. Vui lòng thử lại sau.";
+      const errorMsg = err.response?.data?.msg || "Lỗi máy chủ. Vui lòng thử lại sau.";
       setError(errorMsg);
       console.error("Error during update:", err);
     } finally {
@@ -99,65 +90,77 @@ const EditProfile = () => {
   };
 
   return (
-    <Container>
-      <Card>
+    <PageContainer>
+      <EditProfileCard>
+        <BackButton onClick={() => navigate("/profile")}>
+          <FaArrowLeft /> Quay lại
+        </BackButton>
         <Title>Chỉnh Sửa Thông Tin Cá Nhân</Title>
         {error && <MessageText type="error">{error}</MessageText>}
         {message && <MessageText type="success">{message}</MessageText>}
         <Form onSubmit={handleSubmit}>
-          <Label htmlFor="username">
-            <Icon className="fas fa-user" /> Username:
-          </Label>
-          <Input
-            type="text"
-            id="username"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            required
-            placeholder="Nhập username của bạn"
-          />
-          <Label htmlFor="email">
-            <Icon className="fas fa-envelope" /> Email:
-          </Label>
-          <Input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            placeholder="Nhập email của bạn"
-          />
-          <Label htmlFor="phone">
-            <Icon className="fas fa-phone" /> Phone:
-          </Label>
-          <Input
-            type="text"
-            id="phone"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            placeholder="Nhập số điện thoại của bạn"
-          />
-          <Label htmlFor="address">
-            <Icon className="fas fa-home" /> Address:
-          </Label>
-          <Input
-            type="text"
-            id="address"
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            placeholder="Nhập địa chỉ của bạn"
-          />
+          <InputGroup>
+            <Label htmlFor="username">
+              <Icon as={FaUser} /> Username
+            </Label>
+            <Input
+              type="text"
+              id="username"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              required
+              placeholder="Nhập username của bạn"
+            />
+          </InputGroup>
+          <InputGroup>
+            <Label htmlFor="email">
+              <Icon as={FaEnvelope} /> Email
+            </Label>
+            <Input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              placeholder="Nhập email của bạn"
+            />
+          </InputGroup>
+          <InputGroup>
+            <Label htmlFor="phone">
+              <Icon as={FaPhone} /> Số điện thoại
+            </Label>
+            <Input
+              type="text"
+              id="phone"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="Nhập số điện thoại của bạn"
+            />
+          </InputGroup>
+          <InputGroup>
+            <Label htmlFor="address">
+              <Icon as={FaHome} /> Địa chỉ
+            </Label>
+            <Input
+              type="text"
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              placeholder="Nhập địa chỉ của bạn"
+            />
+          </InputGroup>
           <Button type="submit" disabled={loading}>
             {loading ? "Đang cập nhật..." : "Cập Nhật Thông Tin"}
           </Button>
         </Form>
-      </Card>
-    </Container>
+      </EditProfileCard>
+    </PageContainer>
   );
 };
 
 export default EditProfile;
+

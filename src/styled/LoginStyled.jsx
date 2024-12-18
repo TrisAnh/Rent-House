@@ -1,74 +1,110 @@
-// src/pages/LoginStyled.jsx
 import styled from "styled-components";
+import { Link } from "react-router-dom";
 
-export const Container = styled.div`
+export const LoginContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #e3f2fd; /* Màu nền xanh dương nhạt */
+  background-color: #f0f4f8;
+  padding: 20px;
 `;
 
-export const Box = styled.div`
+export const LoginBox = styled.div`
   background-color: white;
-  border-radius: 12px; /* Bo tròn các góc */
-  display: flex;
-  flex-direction: column; /* Thay đổi hướng của box thành cột */
-  width: 400px; /* Chiều rộng của box đăng nhập */
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Đổ bóng cho box */
-  padding: 2rem; /* Padding cho box */
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
 `;
 
-export const Title = styled.h2`
+export const LoginTitle = styled.h1`
+  color: #2d3748;
+  font-size: 28px;
+  margin-bottom: 24px;
   text-align: center;
-  margin-bottom: 1.5rem;
-  color: #1976d2; /* Màu chữ xanh dương */
+  font-weight: 700;
 `;
 
-export const Form = styled.form`
+export const ErrorMessage = styled.p`
+  color: #e53e3e;
+  background-color: #fff5f5;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 14px;
+`;
+
+export const LoginForm = styled.form`
   display: flex;
   flex-direction: column;
-  width: 100%; /* Đảm bảo form chiếm 100% chiều rộng của box */
+`;
+
+export const FormGroup = styled.div`
+  margin-bottom: 20px;
+`;
+
+export const Label = styled.label`
+  display: block;
+  margin-bottom: 8px;
+  color: #4a5568;
+  font-size: 14px;
+  font-weight: 500;
 `;
 
 export const Input = styled.input`
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  font-size: 1rem;
-  border: 1px solid #90caf9; /* Đường viền màu xanh dương nhạt */
-  border-radius: 4px;
-  transition: border 0.3s ease;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: all 0.3s ease;
 
   &:focus {
     outline: none;
-    border-color: #1976d2; /* Đổi màu khi focus sang xanh dương đậm */
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
   }
 `;
 
-export const Button = styled.button`
-  background-color: #1976d2; /* Nền nút màu xanh dương */
+export const SubmitButton = styled.button`
+  background-color: #4299e1;
   color: white;
-  padding: 0.75rem;
   border: none;
-  border-radius: 4px;
-  font-size: 1rem;
+  padding: 14px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
   transition: background-color 0.3s ease;
 
   &:hover {
-    background-color: #115293; /* Đổi màu khi hover sang màu xanh đậm hơn */
+    background-color: #3182ce;
+  }
+
+  &:disabled {
+    background-color: #a0aec0;
+    cursor: not-allowed;
   }
 `;
 
-export const Link = styled.a`
-  text-align: center;
-  color: #1976d2; /* Màu xanh dương cho các liên kết */
-  text-decoration: underline;
-  margin-top: 0.5rem;
+export const FooterLinks = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
 `;
 
-export const FooterText = styled.p`
-  text-align: center;
-  margin-top: 1rem;
-  font-size: 0.9rem; /* Giảm kích thước chữ cho footer */
+export const FooterLink = styled(Link)`
+  color: #4299e1;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: #3182ce;
+    text-decoration: underline;
+  }
 `;

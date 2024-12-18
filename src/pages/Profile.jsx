@@ -1,19 +1,20 @@
-// src/pages/Profile.jsx
 import React, { useState, useEffect } from "react";
 import { getUserById } from "../api/users";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 import {
-  Container,
-  Box,
+  ProfileContainer,
+  ProfileCard,
+  Avatar,
   Title,
-  InfoContainer,
+  InfoList,
   InfoItem,
   Label,
   Value,
-  Button,
+  EditButton,
   MessageText,
+  SkeletonLoader,
 } from "../styled/ProfileStyled";
-import { useAuth } from "../hooks/useAuth";
 
 const Profile = () => {
   const { user, token } = useAuth();
@@ -69,56 +70,53 @@ const Profile = () => {
   const handleEditProfile = () => {
     navigate("/editProfile", { state: { fromProfile: true } });
   };
+
   if (loading) {
-    return (
-      <Container>
-        {message && <div className="success-message">{message}</div>}
-        <Box>
-          <Title>Thông Tin Cá Nhân</Title>
-          <p style={{ textAlign: "center" }}>Đang tải...</p>
-        </Box>
-      </Container>
-    );
+    return <SkeletonLoader />;
   }
 
   return (
-    <Container>
-      <Box>
-        {message && (
-          <div className="success-message" style={{ textAlign: "center" }}>
-            {message}
-          </div>
+    <ProfileContainer>
+      <ProfileCard>
+        {message && <MessageText type="success">{message}</MessageText>}
+        {profile && (
+          <Avatar
+            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+              profile.username
+            )}&background=random`}
+            alt={`Ảnh đại diện của ${profile.username}`}
+          />
         )}
         <Title>Thông Tin Cá Nhân</Title>
         {error && <MessageText type="error">{error}</MessageText>}
-        {profile && renderProfileInfo(profile)}
         {profile && (
-          <Button onClick={handleEditProfile}>Chỉnh Sửa Thông Tin</Button>
+          <>
+            <InfoList>
+              <InfoItem>
+                <Label>Username:</Label>
+                <Value>{profile.username}</Value>
+              </InfoItem>
+              <InfoItem>
+                <Label>Email:</Label>
+                <Value>{profile.email}</Value>
+              </InfoItem>
+              <InfoItem>
+                <Label>Phone:</Label>
+                <Value>{profile.phone}</Value>
+              </InfoItem>
+              <InfoItem>
+                <Label>Address:</Label>
+                <Value>{profile.address}</Value>
+              </InfoItem>
+            </InfoList>
+            <EditButton onClick={handleEditProfile}>
+              Chỉnh Sửa Thông Tin
+            </EditButton>
+          </>
         )}
-      </Box>
-    </Container>
+      </ProfileCard>
+    </ProfileContainer>
   );
 };
-
-const renderProfileInfo = (profile) => (
-  <InfoContainer>
-    <InfoItem>
-      <Label>Username:</Label>
-      <Value>{profile.username}</Value>
-    </InfoItem>
-    <InfoItem>
-      <Label>Email:</Label>
-      <Value>{profile.email}</Value>
-    </InfoItem>
-    <InfoItem>
-      <Label>Phone:</Label>
-      <Value>{profile.phone}</Value>
-    </InfoItem>
-    <InfoItem>
-      <Label>Address:</Label>
-      <Value>{profile.address}</Value>
-    </InfoItem>
-  </InfoContainer>
-);
 
 export default Profile;

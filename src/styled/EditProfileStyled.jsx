@@ -1,32 +1,28 @@
-// src/components/ProfileStyled.js
 import styled from "styled-components";
 
-export const Container = styled.div`
+export const PageContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh; /* Tùy chỉnh chiều cao */
-  background-color: #f4f4f4; /* Màu nền */
+  min-height: 100vh;
+  background-color: #f0f2f5;
+  padding: 20px;
 `;
 
-export const Card = styled.div`
+export const EditProfileCard = styled.div`
   background-color: #ffffff;
-  padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  max-width: 400px;
-  margin: 20px auto;
-  transition: box-shadow 0.3s;
-
-  &:hover {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  }
+  padding: 30px;
+  width: 100%;
+  max-width: 500px;
 `;
 
 export const Title = styled.h1`
   font-size: 24px;
-  margin-bottom: 20px;
   color: #333;
+  margin-bottom: 20px;
+  text-align: center;
 `;
 
 export const Form = styled.form`
@@ -34,48 +30,91 @@ export const Form = styled.form`
   flex-direction: column;
 `;
 
+export const InputGroup = styled.div`
+  margin-bottom: 20px;
+`;
+
 export const Label = styled.label`
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #555;
   margin-bottom: 5px;
-  font-weight: bold;
 `;
 
 export const Input = styled.input`
-  margin-bottom: 15px;
+  width: 100%;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  font-size: 16px;
+  transition: border-color 0.3s;
 
   &:focus {
-    border-color: #007bff;
     outline: none;
+    border-color: #4a90e2;
   }
 `;
 
 export const Button = styled.button`
-  padding: 10px;
+  background-color: #4a90e2;
+  color: white;
   border: none;
   border-radius: 4px;
-  background-color: #007bff;
-  color: white;
+  padding: 12px;
+  font-size: 16px;
   cursor: pointer;
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #0056b3;
+    background-color: #357ae8;
   }
 
   &:disabled {
-    background-color: #ccc;
+    background-color: #cccccc;
     cursor: not-allowed;
   }
 `;
 
 export const MessageText = styled.p`
-  color: ${(props) => (props.type === "error" ? "red" : "green")};
-  margin-bottom: 15px;
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 10px;
+  border-radius: 4px;
+  font-weight: bold;
+
+  ${({ type }) =>
+    type === "error"
+      ? `
+    background-color: #ffebee;
+    color: #c62828;
+  `
+      : `
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  `}
 `;
 
-export const Icon = styled.i`
+export const Icon = styled.span`
   margin-right: 8px;
-  color: #007bff;
+  color: #4a90e2;
+`;
+
+export const BackButton = styled.button`
+  background: none;
+  border: none;
+  color: #4a90e2;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  margin-bottom: 20px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  svg {
+    margin-right: 5px;
+  }
 `;

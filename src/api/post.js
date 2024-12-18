@@ -39,6 +39,9 @@ export const getPostByDistrict = async (district) => {
 export const getDistricts = async () => {
   return axiosInstance.get("/post/districts");
 };
+export const getLatestPosts = async () => {
+  return axiosInstance.get("/post/getLatest");
+};
 export const incrementViewCount = async (id) => {
   try {
     const response = await fetch(

@@ -209,10 +209,7 @@ const Comments = ({ listingId }) => {
       <div className="comments-list">
         {comments.length > 0 ? (
           comments.map((comment) => (
-            <div
-              key={`${comment._id}-${comment.createdAt}`}
-              className="comment"
-            >
+            <div key={comment.id} className="comment">
               <div className="comment-header">
                 <FontAwesomeIcon icon={faUser} className="user-icon" />
                 <span className="username">{comment.username}</span>

@@ -44,7 +44,9 @@ const Register = () => {
         toast.error("Đăng ký thất bại: Vui lòng thử lại.");
       }
     } catch (error) {
-      toast.error("Đăng ký thất bại: " + error.message);
+      toast.error(
+        "Đăng ký thất bại: Vui lòng kiểm tra thông tin đã nhập và email"
+      );
     }
   };
 

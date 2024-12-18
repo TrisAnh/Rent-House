@@ -13,10 +13,187 @@ import {
   FaParking,
   FaSnowflake,
   FaUtensils,
-  FaElevator,
+  FaChevronDown,
 } from "react-icons/fa";
-
+import styled from "styled-components";
+import { ArrowUpDown } from "lucide-react";
 const ITEMS_PER_PAGE = 9;
+
+const Container = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+`;
+
+const Header = styled.header`
+  text-align: center;
+  margin-bottom: 2rem;
+`;
+
+const Title = styled.h1`
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+`;
+
+const FiltersContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+`;
+
+const FilterButton = styled.button`
+  padding: 0.5rem 1rem;
+  background-color: ${(props) => (props.$active ? "#3498db" : "#ecf0f1")};
+  color: ${(props) => (props.$active ? "white" : "#34495e")};
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: ${(props) => (props.$active ? "#2980b9" : "#bdc3c7")};
+  }
+`;
+
+const DistrictDropdown = styled.div`
+  position: relative;
+`;
+
+const DistrictList = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  border: 1px solid #ecf0f1;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+  display: ${(props) => (props.$show ? "block" : "none")};
+`;
+
+const DistrictItem = styled.button`
+  display: block;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #ecf0f1;
+  }
+`;
+
+const ListingsGrid = styled.div`
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+`;
+
+const ListingCard = styled(Link)`
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-decoration: none;
+  color: inherit;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+`;
+
+const ListingImage = styled.img`
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+`;
+
+const ListingContent = styled.div`
+  padding: 1rem;
+`;
+
+const ListingTitle = styled.h2`
+  font-size: 1.25rem;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+`;
+
+const ListingLocation = styled.p`
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+`;
+
+const ListingPrice = styled.div`
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #e74c3c;
+  margin-bottom: 1rem;
+`;
+
+const ListingDetails = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+`;
+
+const ListingDetail = styled.span`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+  color: #34495e;
+  background-color: #ecf0f1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+`;
+
+const ListingAmenities = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+`;
+
+const AmenityIcon = styled.span`
+  color: #3498db;
+  font-size: 1.2rem;
+`;
+
+const ViewDetailsButton = styled(Link)`
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  background-color: #3498db;
+  color: white;
+  padding: 0.75rem;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #2980b9;
+  }
+`;
+
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  gap: 1rem;
+`;
 
 export default function SharedListings() {
   const [listings, setListings] = useState([]);
@@ -26,6 +203,7 @@ export default function SharedListings() {
   const [districts, setDistricts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [showDistrictList, setShowDistrictList] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -113,6 +291,11 @@ export default function SharedListings() {
       navigate(`/shared?district=${encodeURIComponent(district)}`);
       fetchListingsByDistrict(district);
     }
+    setShowDistrictList(false);
+  };
+
+  const toggleDistrictList = () => {
+    setShowDistrictList(!showDistrictList);
   };
 
   const paginatedListings = listings.slice(
@@ -122,145 +305,121 @@ export default function SharedListings() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <Container>
         <p className="text-center text-xl text-gray-600">Đang tải...</p>
-      </div>
+      </Container>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-center text-blue-900 mb-8">
-        Tìm Người Ở Ghép tại TP.HCM
-      </h1>
-
-      <div className="flex justify-center mb-6 flex-wrap gap-2">
-        <button
-          className={`px-4 py-2 rounded-full text-sm transition duration-300 ${
-            selectedDistrict === ""
-              ? "bg-blue-600 text-white"
-              : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-          }`}
-          onClick={() => handleDistrictChange("")}
-        >
-          Tất cả
-        </button>
-        {districts.map((district) => (
-          <button
-            key={district}
-            className={`px-4 py-2 rounded-full text-sm transition duration-300 ${
-              selectedDistrict === district
-                ? "bg-blue-600 text-white"
-                : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-            }`}
-            onClick={() => handleDistrictChange(district)}
+    <Container>
+      <Header>
+        <Title>Tìm Người Ở Ghép tại TP.HCM</Title>
+        <FiltersContainer>
+          <FilterButton
+            $active={selectedDistrict === ""}
+            onClick={() => handleDistrictChange("")}
           >
-            {district}
-          </button>
-        ))}
-      </div>
+            Tất cả
+          </FilterButton>
+          <DistrictDropdown>
+            <FilterButton onClick={toggleDistrictList}>
+              {selectedDistrict || "Chọn quận"} <FaChevronDown />
+            </FilterButton>
+            <DistrictList $show={showDistrictList}>
+              {districts.map((district) => (
+                <DistrictItem
+                  key={district}
+                  onClick={() => handleDistrictChange(district)}
+                >
+                  {district}
+                </DistrictItem>
+              ))}
+            </DistrictList>
+          </DistrictDropdown>
+        </FiltersContainer>
+      </Header>
 
       {error && <p className="text-center text-red-600 mb-6">{error}</p>}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <ListingsGrid>
         {paginatedListings.map((listing) => (
-          <div
-            key={listing._id}
-            className="bg-white rounded-xl shadow-lg overflow-hidden transition duration-300 hover:shadow-xl"
-          >
-            <img
+          <ListingCard key={listing._id} to={`/listings/${listing._id}`}>
+            <ListingImage
               src={
                 listing.images[0]?.url ||
                 "/placeholder.svg?height=200&width=300"
               }
               alt={listing.title}
-              className="w-full h-48 object-cover"
             />
-            <div className="p-4">
-              <h2 className="text-xl font-bold text-gray-800 mb-2">
-                {listing.title}
-              </h2>
-              <p className="text-gray-600 mb-4 flex items-center">
-                <FaMapMarkerAlt className="mr-2 text-blue-500" />
-                {listing.location.address}, {listing.location.district},{" "}
-                {listing.location.city}
-              </p>
-              <div className="flex justify-between items-center mb-4">
-                <p className="text-2xl font-bold text-blue-600">
-                  {listing.price.toLocaleString()} VND/tháng
-                </p>
-                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                  Ở ghép
-                </span>
-              </div>
-              <div className="space-y-2 mb-4">
-                <p className="flex items-center text-gray-700">
-                  <FaUserFriends className="mr-2 text-blue-500" />
-                  <strong>Số người ở ghép:</strong>{" "}
-                  {listing.maxOccupants || "Chưa xác định"}
-                </p>
-                <p className="flex items-center text-gray-700">
-                  <FaRulerCombined className="mr-2 text-blue-500" />
-                  <strong>Diện tích:</strong> {listing.size} m²
-                </p>
-                <p className="flex items-center text-gray-700">
-                  <strong className="mr-2">Tiện ích:</strong>
-                  {listing.amenities.hasWifi && (
-                    <FaWifi className="mr-1 text-blue-500" title="Wifi" />
-                  )}
-                  {listing.amenities.hasParking && (
-                    <FaParking
-                      className="mr-1 text-blue-500"
-                      title="Bãi đậu xe"
-                    />
-                  )}
-                  {listing.amenities.hasAirConditioner && (
-                    <FaSnowflake
-                      className="mr-1 text-blue-500"
-                      title="Điều hòa"
-                    />
-                  )}
-                  {listing.amenities.hasKitchen && (
-                    <FaUtensils
-                      className="mr-1 text-blue-500"
-                      title="Nhà bếp"
-                    />
-                  )}
-                  {listing.amenities.hasElevator && (
-                    <faElevator
-                      className="mr-1 text-blue-500"
-                      title="Thang máy"
-                    />
-                  )}
-                </p>
-              </div>
-              <Link
-                to={`/listings/${listing._id}`}
-                className="inline-block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300"
-              >
+            <ListingContent>
+              <ListingTitle>{listing.title}</ListingTitle>
+              <ListingLocation>
+                <FaMapMarkerAlt />
+                {listing.location.address}, {listing.location.district}
+              </ListingLocation>
+              <ListingPrice>
+                {listing.price.toLocaleString()} VND/tháng
+              </ListingPrice>
+              <ListingDetails>
+                <ListingDetail>
+                  <FaUserFriends />
+                  Số người: {listing.maxOccupants || "Chưa xác định"}
+                </ListingDetail>
+                <ListingDetail>
+                  <FaRulerCombined />
+                  {listing.size} m²
+                </ListingDetail>
+              </ListingDetails>
+              <ListingAmenities>
+                {listing.amenities.hasWifi && (
+                  <AmenityIcon title="Wifi">
+                    <FaWifi />
+                  </AmenityIcon>
+                )}
+                {listing.amenities.hasParking && (
+                  <AmenityIcon title="Bãi đậu xe">
+                    <FaParking />
+                  </AmenityIcon>
+                )}
+                {listing.amenities.hasAirConditioner && (
+                  <AmenityIcon title="Điều hòa">
+                    <FaSnowflake />
+                  </AmenityIcon>
+                )}
+                {listing.amenities.hasKitchen && (
+                  <AmenityIcon title="Nhà bếp">
+                    <FaUtensils />
+                  </AmenityIcon>
+                )}
+                {listing.amenities.hasElevator && (
+                  <AmenityIcon title="Thang máy">
+                    <ArrowUpDown />
+                  </AmenityIcon>
+                )}
+              </ListingAmenities>
+              <ViewDetailsButton to={`/listings/${listing._id}`}>
                 Xem chi tiết
-              </Link>
-            </div>
-          </div>
+              </ViewDetailsButton>
+            </ListingContent>
+          </ListingCard>
         ))}
-      </div>
+      </ListingsGrid>
 
-      <div className="flex justify-center mt-8 space-x-4">
-        <button
+      <PaginationContainer>
+        <FilterButton
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="px-4 py-2 bg-blue-600 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition duration-300 hover:bg-blue-700"
         >
           Trang trước
-        </button>
-        <button
+        </FilterButton>
+        <FilterButton
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="px-4 py-2 bg-blue-600 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition duration-300 hover:bg-blue-700"
         >
           Trang sau
-        </button>
-      </div>
-    </div>
+        </FilterButton>
+      </PaginationContainer>
+    </Container>
   );
 }

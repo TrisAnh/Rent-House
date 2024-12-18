@@ -1,7 +1,149 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import styled from "styled-components";
 import { login as loginApi } from "../api/auth";
 import { useAuth } from "../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+
+// Styled Components
+const PageContainer = styled.div`
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+  padding: 20px;
+`;
+
+const LoginContainer = styled.div`
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 420px;
+  padding: 40px;
+  transition: transform 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+  }
+
+  @media (max-width: 480px) {
+    padding: 30px;
+  }
+`;
+
+const Title = styled.h1`
+  color: #2d3748;
+  font-size: 32px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 35px;
+  letter-spacing: -0.5px;
+`;
+
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const Label = styled.label`
+  color: #4a5568;
+  font-size: 15px;
+  font-weight: 500;
+  margin-left: 4px;
+`;
+
+const Input = styled.input`
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  background: #f8fafc;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  &::placeholder {
+    color: #94a3b8;
+  }
+`;
+
+const SubmitButton = styled.button`
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+
+  &:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const LinksContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+`;
+
+const StyledLink = styled.a`
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #2563eb;
+    text-decoration: underline;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &::before {
+    content: "⚠️";
+  }
+`;
 
 export default function Login() {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
@@ -22,19 +164,10 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await loginApi(credentials); // Call the login API
-      const userData = response.data; // Get the user data from the response
-
-      await login(userData); // Store user data in context or state
-
-      // Check if user is a "renter" or "user" based on userRole and redirect accordingly
-      if (userData.role === "renter") {
-        // If the user is a renter, navigate to the Renter header or a specific page for renters
-        navigate("/renter-header");
-      } else {
-        // If the user is just a regular user, navigate to a standard page
-        navigate("/");
-      }
+      const response = await loginApi(credentials);
+      const userData = response.data;
+      await login(userData);
+      navigate(userData.role === "renter" ? "/renter-header" : "/");
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
@@ -47,155 +180,44 @@ export default function Login() {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-box">
-        <h1 className="login-title">Đăng Nhập</h1>
-        {error && <p className="error-message">{error}</p>}
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="form-group">
-            <label htmlFor="email">Email/Số điện thoại:</label>
-            <input
+    <PageContainer>
+      <LoginContainer>
+        <Title>Đăng Nhập</Title>
+        {error && <ErrorMessage>{error}</ErrorMessage>}
+        <Form onSubmit={handleSubmit}>
+          <FormGroup>
+            <Label htmlFor="email">Email/Số điện thoại</Label>
+            <Input
               type="text"
               id="email"
               name="email"
+              placeholder="Nhập email hoặc số điện thoại"
               value={credentials.email}
               onChange={handleChange}
               required
-              className="form-input"
             />
-          </div>
-          <div className="form-group">
-            <label htmlFor="password">Mật khẩu:</label>
-            <input
+          </FormGroup>
+          <FormGroup>
+            <Label htmlFor="password">Mật khẩu</Label>
+            <Input
               type="password"
               id="password"
               name="password"
+              placeholder="Nhập mật khẩu"
               value={credentials.password}
               onChange={handleChange}
               required
-              className="form-input"
             />
-          </div>
-          <button type="submit" className="submit-button" disabled={loading}>
+          </FormGroup>
+          <SubmitButton type="submit" disabled={loading}>
             {loading ? "Đang đăng nhập..." : "Đăng Nhập"}
-          </button>
-        </form>
-        <div className="footer-links">
-          <a href="/forgot-password" className="footer-link">
-            Quên mật khẩu?
-          </a>
-          <a href="/register" className="footer-link">
-            Đăng ký
-          </a>
-        </div>
-      </div>
-
-      <style>{`
-        .login-container {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          min-height: 100vh;
-          background-color: #f0f2f5;
-          padding: 20px;
-        }
-
-        .login-box {
-          background-color: white;
-          padding: 40px;
-          border-radius: 8px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          width: 100%;
-          max-width: 400px;
-        }
-
-        .login-title {
-          color: #333;
-          font-size: 24px;
-          margin-bottom: 20px;
-          text-align: center;
-        }
-
-        .error-message {
-          color: #e74c3c;
-          background-color: #fdeaea;
-          padding: 10px;
-          border-radius: 4px;
-          margin-bottom: 20px;
-          text-align: center;
-        }
-
-        .login-form {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .form-group {
-          margin-bottom: 20px;
-        }
-
-        .form-group label {
-          display: block;
-          margin-bottom: 5px;
-          color: #555;
-        }
-
-        .form-input {
-          width: 100%;
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          font-size: 16px;
-        }
-
-        .form-input:focus {
-          outline: none;
-          border-color: #3498db;
-          box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-        }
-
-        .submit-button {
-          background-color: #3498db;
-          color: white;
-          border: none;
-          padding: 12px;
-          border-radius: 4px;
-          font-size: 16px;
-          cursor: pointer;
-          transition: background-color 0.3s ease;
-        }
-
-        .submit-button:hover {
-          background-color: #2980b9;
-        }
-
-        .submit-button:disabled {
-          background-color: #bdc3c7;
-          cursor: not-allowed;
-        }
-
-        .footer-links {
-          display: flex;
-          justify-content: space-between;
-          margin-top: 20px;
-        }
-
-        .footer-link {
-          color: #3498db;
-          text-decoration: none;
-          font-size: 14px;
-        }
-
-        .footer-link:hover {
-          text-decoration: underline;
-        }
-
-        @media (max-width: 480px) {
-          .login-box {
-            padding: 20px;
-          }
-        }
-      `}</style>
-    </div>
+          </SubmitButton>
+        </Form>
+        <LinksContainer>
+          <StyledLink href="/forgot-password">Quên mật khẩu?</StyledLink>
+          <StyledLink href="/register">Đăng ký</StyledLink>
+        </LinksContainer>
+      </LoginContainer>
+    </PageContainer>
   );
 }

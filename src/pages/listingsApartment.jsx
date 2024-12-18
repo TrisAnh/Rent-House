@@ -4,6 +4,7 @@ import {
   getPostByRoomType,
   getPostByDistrict,
   getDistricts,
+  getLatestPosts,
 } from "../api/post";
 import {
   FaBed,
@@ -12,10 +13,292 @@ import {
   FaParking,
   FaSnowflake,
   FaUtensils,
-  FaElevator,
+  FaClock,
+  FaEye,
+  FaChevronDown,
 } from "react-icons/fa";
+import { ArrowUpDown } from "lucide-react";
+import styled from "styled-components";
 
 const ITEMS_PER_PAGE = 9;
+
+const Container = styled.div`
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+`;
+
+const Header = styled.div`
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+  border-radius: 12px;
+`;
+
+const Title = styled.h1`
+  font-size: 2.5rem;
+  color: #0050b3;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+`;
+
+const FiltersContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+`;
+
+const FilterButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  border: 2px solid ${(props) => (props.$active ? "#1890ff" : "#e6f7ff")};
+  font-size: 0.95rem;
+  font-weight: 500;
+  background-color: ${(props) => (props.$active ? "#1890ff" : "white")};
+  color: ${(props) => (props.$active ? "white" : "#595959")};
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(24, 144, 255, 0.1);
+    border-color: #1890ff;
+    color: ${(props) => (props.$active ? "white" : "#1890ff")};
+  }
+`;
+
+const DistrictDropdown = styled.div`
+  position: relative;
+  display: inline-block;
+`;
+
+const DistrictList = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+  display: ${(props) => (props.$show ? "grid" : "none")};
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  width: 300px;
+`;
+
+const DistrictItem = styled.button`
+  padding: 0.5rem;
+  border: none;
+  background-color: #f7fafc;
+  color: #4a5568;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #e6f7ff;
+  }
+`;
+
+const MainContent = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 2rem;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const ListingsGrid = styled.div`
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+`;
+
+const ListingCard = styled(Link)`
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid #e2e8f0;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-color: #2563eb;
+  }
+`;
+
+const ListingImageContainer = styled.div`
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+`;
+
+const ListingImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+
+  ${ListingCard}:hover & {
+    transform: scale(1.05);
+  }
+`;
+
+const ListingContent = styled.div`
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+`;
+
+const ListingTitle = styled.h2`
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e40af;
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+`;
+
+const ListingPrice = styled.div`
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #dc2626;
+`;
+
+const ListingLocation = styled.p`
+  font-size: 0.95rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const ListingDetails = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+`;
+
+const ListingDetail = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #f8fafc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #475569;
+
+  svg {
+    color: #2563eb;
+  }
+`;
+
+const ListingFooter = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.9rem;
+  color: #7f8c8d;
+`;
+
+const Sidebar = styled.aside`
+  @media (max-width: 1024px) {
+    display: none;
+  }
+`;
+
+const SidebarCard = styled.div`
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+`;
+
+const SidebarTitle = styled.h2`
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e40af;
+  padding: 1.25rem;
+  border-bottom: 2px solid #e2e8f0;
+`;
+
+const RecentListingCard = styled(Link)`
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #e6f7ff;
+
+  &:hover {
+    background: #f0f9ff;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const RecentListingImage = styled.img`
+  width: 100px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+`;
+
+const RecentListingContent = styled.div`
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+`;
+
+const RecentListingTitle = styled.h3`
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1e40af;
+  margin-bottom: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const RecentListingPrice = styled.div`
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #dc2626;
+`;
+
+const RecentListingFooter = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #8c8c8c;
+`;
 
 export default function ApartmentListings() {
   const [listings, setListings] = useState([]);
@@ -25,6 +308,8 @@ export default function ApartmentListings() {
   const [districts, setDistricts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [recentListings, setRecentListings] = useState([]);
+  const [showDistrictList, setShowDistrictList] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -33,6 +318,7 @@ export default function ApartmentListings() {
 
   useEffect(() => {
     fetchDistricts();
+    fetchRecentListings();
     if (district) {
       setSelectedDistrict(district);
       fetchListingsByDistrict(district);
@@ -48,6 +334,15 @@ export default function ApartmentListings() {
     } catch (err) {
       console.error("Error fetching districts:", err);
       setError("Không thể tải danh sách quận. Vui lòng thử lại sau.");
+    }
+  };
+
+  const fetchRecentListings = async () => {
+    try {
+      const response = await getLatestPosts();
+      setRecentListings(response.data || []);
+    } catch (err) {
+      console.error("Error fetching recent listings:", err);
     }
   };
 
@@ -112,6 +407,11 @@ export default function ApartmentListings() {
       navigate(`/apartment?district=${encodeURIComponent(district)}`);
       fetchListingsByDistrict(district);
     }
+    setShowDistrictList(false);
+  };
+
+  const toggleDistrictList = () => {
+    setShowDistrictList(!showDistrictList);
   };
 
   const paginatedListings = listings.slice(
@@ -121,143 +421,167 @@ export default function ApartmentListings() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <Container>
         <p className="text-center text-xl text-gray-600">Đang tải...</p>
-      </div>
+      </Container>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-center text-blue-900 mb-8">
-        Căn hộ Cho Thuê tại TP.HCM
-      </h1>
-
-      <div className="flex justify-center mb-6 flex-wrap gap-2">
-        <button
-          className={`px-4 py-2 rounded-full text-sm transition duration-300 ${
-            selectedDistrict === ""
-              ? "bg-blue-600 text-white"
-              : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-          }`}
-          onClick={() => handleDistrictChange("")}
-        >
-          Tất cả
-        </button>
-        {districts.map((district) => (
-          <button
-            key={district}
-            className={`px-4 py-2 rounded-full text-sm transition duration-300 ${
-              selectedDistrict === district
-                ? "bg-blue-600 text-white"
-                : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-            }`}
-            onClick={() => handleDistrictChange(district)}
+    <Container>
+      <Header>
+        <Title>Căn hộ Cho Thuê tại TP.HCM</Title>
+        <FiltersContainer>
+          <FilterButton
+            $active={selectedDistrict === ""}
+            onClick={() => handleDistrictChange("")}
           >
-            {district}
-          </button>
-        ))}
-      </div>
+            Tất cả
+          </FilterButton>
+          <DistrictDropdown>
+            <FilterButton onClick={toggleDistrictList}>
+              {selectedDistrict || "Chọn quận"} <FaChevronDown />
+            </FilterButton>
+            <DistrictList $show={showDistrictList}>
+              {districts.map((district) => (
+                <DistrictItem
+                  key={district}
+                  onClick={() => handleDistrictChange(district)}
+                >
+                  {district}
+                </DistrictItem>
+              ))}
+            </DistrictList>
+          </DistrictDropdown>
+        </FiltersContainer>
+      </Header>
 
       {error && <p className="text-center text-red-600 mb-6">{error}</p>}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {paginatedListings.map((listing) => (
-          <div
-            key={listing._id}
-            className="bg-white rounded-xl shadow-lg overflow-hidden transition duration-300 hover:shadow-xl"
-          >
-            <img
-              src={
-                listing.images[0]?.url ||
-                "/placeholder.svg?height=200&width=300"
-              }
-              alt={listing.title}
-              className="w-full h-48 object-cover"
-            />
-            <div className="p-4">
-              <h2 className="text-xl font-bold text-gray-800 mb-2">
-                {listing.title}
-              </h2>
-              <p className="text-gray-600 mb-4">
-                {listing.location.address}, {listing.location.district},{" "}
-                {listing.location.city}
-              </p>
-              <div className="flex justify-between items-center mb-4">
-                <p className="text-2xl font-bold text-blue-600">
-                  {listing.price.toLocaleString()} VND/tháng
-                </p>
-                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                  Căn hộ
-                </span>
-              </div>
-              <div className="space-y-2 mb-4">
-                <p className="flex items-center text-gray-700">
-                  <FaBed className="mr-2 text-blue-500" />
-                  <strong>Loại:</strong> Căn hộ
-                </p>
-                <p className="flex items-center text-gray-700">
-                  <FaRulerCombined className="mr-2 text-blue-500" />
-                  <strong>Diện tích:</strong> {listing.size} m²
-                </p>
-                <p className="flex items-center text-gray-700">
-                  <strong className="mr-2">Tiện ích:</strong>
-                  {listing.amenities.hasWifi && (
-                    <FaWifi className="mr-1 text-blue-500" title="Wifi" />
-                  )}
-                  {listing.amenities.hasParking && (
-                    <FaParking
-                      className="mr-1 text-blue-500"
-                      title="Bãi đậu xe"
-                    />
-                  )}
-                  {listing.amenities.hasAirConditioner && (
-                    <FaSnowflake
-                      className="mr-1 text-blue-500"
-                      title="Điều hòa"
-                    />
-                  )}
-                  {listing.amenities.hasKitchen && (
-                    <FaUtensils
-                      className="mr-1 text-blue-500"
-                      title="Nhà bếp"
-                    />
-                  )}
-                  {listing.amenities.hasElevator && (
-                    <faElevator
-                      className="mr-1 text-blue-500"
-                      title="Thang máy"
-                    />
-                  )}
-                </p>
-              </div>
-              <Link
-                to={`/listings/${listing._id}`}
-                className="inline-block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300"
-              >
-                Xem chi tiết
-              </Link>
-            </div>
-          </div>
-        ))}
-      </div>
+      <MainContent>
+        <div>
+          <ListingsGrid>
+            {paginatedListings.map((listing) => (
+              <ListingCard key={listing._id} to={`/listings/${listing._id}`}>
+                <ListingImageContainer>
+                  <ListingImage
+                    src={
+                      listing.images[0]?.url ||
+                      "/placeholder.svg?height=200&width=300"
+                    }
+                    alt={listing.title}
+                  />
+                </ListingImageContainer>
+                <ListingContent>
+                  <ListingTitle>{listing.title}</ListingTitle>
+                  <ListingLocation>
+                    {listing.location.address}, {listing.location.district},{" "}
+                    {listing.location.city}
+                  </ListingLocation>
+                  <ListingPrice>
+                    {listing.price.toLocaleString()} VND/tháng
+                  </ListingPrice>
+                  <ListingDetails>
+                    <ListingDetail>
+                      <FaRulerCombined />
+                      {listing.size} m²
+                    </ListingDetail>
+                    {listing.amenities.hasWifi && (
+                      <ListingDetail>
+                        <FaWifi />
+                        Wifi
+                      </ListingDetail>
+                    )}
+                    {listing.amenities.hasParking && (
+                      <ListingDetail>
+                        <FaParking />
+                        Bãi đỗ xe
+                      </ListingDetail>
+                    )}
+                    {listing.amenities.hasAirConditioner && (
+                      <ListingDetail>
+                        <FaSnowflake />
+                        Điều hòa
+                      </ListingDetail>
+                    )}
+                    {listing.amenities.hasKitchen && (
+                      <ListingDetail>
+                        <FaUtensils />
+                        Nhà bếp
+                      </ListingDetail>
+                    )}
+                    {listing.amenities.hasElevator && (
+                      <ListingDetail>
+                        <ArrowUpDown />
+                        Thang máy
+                      </ListingDetail>
+                    )}
+                  </ListingDetails>
+                  <ListingFooter>
+                    <span>
+                      <FaClock />{" "}
+                      {new Date(listing.createdAt).toLocaleDateString("vi-VN")}
+                    </span>
+                    <span>
+                      <FaEye /> {listing.views || 0} lượt xem
+                    </span>
+                  </ListingFooter>
+                </ListingContent>
+              </ListingCard>
+            ))}
+          </ListingsGrid>
 
-      <div className="flex justify-center mt-8 space-x-4">
-        <button
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="px-4 py-2 bg-blue-600 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition duration-300 hover:bg-blue-700"
-        >
-          Trang trước
-        </button>
-        <button
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 bg-blue-600 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition duration-300 hover:bg-blue-700"
-        >
-          Trang sau
-        </button>
-      </div>
-    </div>
+          <div className="flex justify-center mt-8 space-x-4">
+            <FilterButton
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              Trang trước
+            </FilterButton>
+            <FilterButton
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Trang sau
+            </FilterButton>
+          </div>
+        </div>
+
+        <Sidebar>
+          <SidebarCard>
+            <SidebarTitle>Tin mới đây</SidebarTitle>
+            {recentListings.slice(0, 5).map((listing) => (
+              <RecentListingCard
+                key={listing._id}
+                to={`/listings/${listing._id}`}
+              >
+                <RecentListingImage
+                  src={
+                    listing.images[0]?.url ||
+                    "/placeholder.svg?height=80&width=100"
+                  }
+                  alt={listing.title}
+                />
+                <RecentListingContent>
+                  <RecentListingTitle>{listing.title}</RecentListingTitle>
+                  <RecentListingPrice>
+                    {listing.price.toLocaleString()} VND/tháng
+                  </RecentListingPrice>
+                  <RecentListingFooter>
+                    <span>
+                      <FaClock />{" "}
+                      {new Date(listing.createdAt).toLocaleDateString("vi-VN")}
+                    </span>
+                    <span>
+                      <FaEye /> {listing.views || 0}
+                    </span>
+                  </RecentListingFooter>
+                </RecentListingContent>
+              </RecentListingCard>
+            ))}
+          </SidebarCard>
+        </Sidebar>
+      </MainContent>
+    </Container>
   );
 }
