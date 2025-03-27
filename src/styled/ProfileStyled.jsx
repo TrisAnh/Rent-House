@@ -1,137 +1,323 @@
 import styled, { keyframes } from "styled-components";
 
+// Animations
 const fadeIn = keyframes`
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 `;
 
+const pulse = keyframes`
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+`;
+
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
+// Container
 export const ProfileContainer = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  min-height: 100vh;
-  background-color: #f0f2f5;
-  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%239C92AC' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+  min-height: calc(100vh - 120px);
+
+  @media (max-width: 768px) {
+    padding: 15px;
+  }
 `;
 
+// Card
 export const ProfileCard = styled.div`
   background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
   width: 100%;
-  max-width: 400px;
+  max-width: 800px;
+  overflow: hidden;
   animation: ${fadeIn} 0.5s ease-out;
+  margin-top: 20px;
+
+  @media (max-width: 576px) {
+    border-radius: 8px;
+  }
+`;
+
+export const ProfileHeader = styled.div`
+  background-color: #0056b3;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+
+  @media (max-width: 576px) {
+    padding: 30px 15px;
+  }
+`;
+
+export const ProfileContent = styled.div`
+  padding: 30px;
+
+  @media (max-width: 576px) {
+    padding: 20px 15px;
+  }
+`;
+
+// Avatar
+export const AvatarContainer = styled.div`
+  margin-bottom: 15px;
+  position: relative;
 `;
 
 export const Avatar = styled.img`
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  margin: 0 auto 1rem;
-  display: block;
-  border: 3px solid #3498db;
+  object-fit: cover;
+  border: 4px solid white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+  @media (max-width: 576px) {
+    width: 100px;
+    height: 100px;
+  }
 `;
 
-export const Title = styled.h1`
-  font-size: 1.5rem;
-  color: #2c3e50;
-  text-align: center;
-  margin-bottom: 1.5rem;
-`;
-
-export const InfoList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0;
-`;
-
-export const InfoItem = styled.li`
+export const AvatarInitials = styled.div`
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
   display: flex;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid #ecf0f1;
-  padding-bottom: 0.5rem;
-`;
-
-export const Label = styled.span`
+  align-items: center;
+  justify-content: center;
+  background-color: #0056b3;
+  color: white;
+  font-size: 40px;
   font-weight: bold;
-  color: #7f8c8d;
-  width: 100px;
+  border: 4px solid white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+  @media (max-width: 576px) {
+    width: 100px;
+    height: 100px;
+    font-size: 32px;
+  }
 `;
 
-export const Value = styled.span`
-  color: #34495e;
+export const UserName = styled.h1`
+  color: white;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  text-align: center;
+
+  @media (max-width: 576px) {
+    font-size: 20px;
+  }
+`;
+
+// Info Section
+export const InfoSection = styled.section`
+  margin-bottom: 30px;
+
+  h2 {
+    font-size: 20px;
+    color: #333;
+    margin-bottom: 20px;
+    position: relative;
+    padding-bottom: 10px;
+
+    &:after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 50px;
+      height: 3px;
+      background-color: #0056b3;
+    }
+  }
+`;
+
+export const InfoGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+`;
+
+export const InfoCard = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  }
+`;
+
+export const InfoIcon = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #e6f0ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15px;
+  color: #0056b3;
+  flex-shrink: 0;
+`;
+
+export const InfoContent = styled.div`
   flex: 1;
 `;
 
-export const EditButton = styled.button`
-  background-color: #3498db;
+export const InfoLabel = styled.p`
+  margin: 0;
+  font-size: 12px;
+  color: #6c757d;
+  margin-bottom: 4px;
+`;
+
+export const InfoValue = styled.p`
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
+  word-break: break-word;
+`;
+
+// Buttons
+export const ActionButton = styled.button`
+  background-color: #0056b3;
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border-radius: 6px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s ease;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
   width: 100%;
-  margin-top: 1rem;
+  max-width: 250px;
+  margin: 0 auto;
 
   &:hover {
-    background-color: #2980b9;
+    background-color: #004494;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 86, 179, 0.2);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  @media (max-width: 576px) {
+    padding: 10px 20px;
+    font-size: 14px;
   }
 `;
 
-export const MessageText = styled.p`
-  text-align: center;
-  margin-bottom: 1rem;
-  padding: 0.5rem;
-  border-radius: 4px;
-  font-weight: bold;
-
-  ${({ type }) =>
-    type === "error"
-      ? `
-    background-color: #ffebee;
-    color: #c62828;
-  `
-      : `
-    background-color: #e8f5e9;
-    color: #2e7d32;
-  `}
-`;
-
-const skeletonAnimation = keyframes`
-  0% {
-    background-position: -200px 0;
-  }
-  100% {
-    background-position: calc(200px + 100%) 0;
-  }
-`;
-
-export const SkeletonLoader = styled.div`
+// Messages
+export const MessageContainer = styled.div`
+  display: flex;
+  align-items: center;
+  background-color: #d4edda;
+  color: #155724;
+  padding: 12px 20px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  animation: ${fadeIn} 0.3s ease-out;
   width: 100%;
-  max-width: 400px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
 
-  &::after {
-    content: "";
-    display: block;
-    width: 100%;
-    height: 300px;
-    background-image: linear-gradient(
-      90deg,
-      #f0f0f0 25%,
-      #e0e0e0 50%,
-      #f0f0f0 75%
-    );
-    background-size: 200px 100%;
-    background-repeat: no-repeat;
-    animation: ${skeletonAnimation} 1.2s ease-in-out infinite;
+  svg {
+    margin-right: 10px;
+    background-color: #155724;
+    color: white;
+    border-radius: 50%;
+    padding: 3px;
   }
+`;
+
+// Loading
+export const LoadingContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+`;
+
+export const LoadingSpinner = styled.div`
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 86, 179, 0.1);
+  border-radius: 50%;
+  border-top-color: #0056b3;
+  animation: ${spin} 1s linear infinite;
+  margin-bottom: 15px;
+`;
+
+export const LoadingText = styled.p`
+  color: #6c757d;
+  font-size: 16px;
+`;
+
+// Skeleton Loading
+export const SkeletonCard = styled.div`
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 800px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+export const SkeletonAvatar = styled.div`
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: #e9ecef;
+  animation: ${pulse} 1.5s infinite;
+  margin-bottom: 20px;
+`;
+
+export const SkeletonLine = styled.div`
+  height: ${(props) => props.height || "16px"};
+  width: ${(props) => props.width || "100%"};
+  background-color: #e9ecef;
+  border-radius: 4px;
+  margin: ${(props) => props.margin || "10px 0"};
+  animation: ${pulse} 1.5s infinite;
+`;
+
+export const SkeletonButton = styled.div`
+  height: 45px;
+  width: 200px;
+  background-color: #e9ecef;
+  border-radius: 6px;
+  margin-top: 30px;
+  animation: ${pulse} 1.5s infinite;
 `;

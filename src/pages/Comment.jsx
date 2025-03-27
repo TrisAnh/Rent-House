@@ -35,7 +35,7 @@ const Comments = ({ listingId }) => {
       console.log("fetchedComments: ", fetchedComments.data);
       if (Array.isArray(fetchedComments.data)) {
         const formattedComments = fetchedComments.data.map((comment) => ({
-          id: comment._id,
+          id: comment._id, // Ensure we're using the correct ID from the API
           comment: comment.comment,
           username: comment.user?.username || "Unknown User",
           rating: comment.rating,
@@ -45,7 +45,7 @@ const Comments = ({ listingId }) => {
           userId: comment.user?._id,
         }));
         setComments(formattedComments);
-        console.log("Bình luận của bài viết: ", formattedComments);
+        console.log("Formatted comments:", formattedComments);
         if (fetchedComments.data.length > 0) {
           const house = fetchedComments.data[0].house;
           setHouseInfo(house);

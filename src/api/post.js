@@ -42,6 +42,9 @@ export const getDistricts = async () => {
 export const getLatestPosts = async () => {
   return axiosInstance.get("/post/getLatest");
 };
+export const getAllBlogs = async () => {
+  return axiosInstance.get("/blog/getAll");
+};
 export const incrementViewCount = async (id) => {
   try {
     const response = await fetch(

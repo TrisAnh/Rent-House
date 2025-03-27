@@ -1,37 +1,68 @@
-import React, { useState, useEffect } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import axios from "axios";
-import "./CreatePost.css";
+import {
+  Container,
+  PageWrapper,
+  FormCard,
+  FormTitle,
+  FormSection,
+  SectionTitle,
+  FormRow,
+  FormGroup,
+  Label,
+  Input,
+  TextArea,
+  Select,
+  AmenitiesGrid,
+  AmenityItem,
+  MediaUploadSection,
+  MediaPreview,
+  MediaItem,
+  SubmitButton,
+  ErrorAlert,
+  FormDivider,
+  IconWrapper,
+} from "./CreatePostStyles";
+import {
+  FaWifi,
+  FaParking,
+  FaSnowflake,
+  FaUtensils,
+  FaBuilding,
+} from "react-icons/fa";
 
 const CreatePost = () => {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
-  const [address, setAddress] = useState("");
-  const [district, setDistrict] = useState("");
-  const [ward, setWard] = useState("");
-  const [city, setCity] = useState("");
-  const [roomType, setRoomType] = useState("Single");
-  const [area, setArea] = useState("");
-  const [availability, setAvailability] = useState(true);
-  const [electricityCost, setElectricityCost] = useState("");
-  const [waterCost, setWaterCost] = useState("");
-  const [internetCost, setInternetCost] = useState("");
-  const [cleaningCost, setCleaningCost] = useState("");
-  const [securityCost, setSecurityCost] = useState("");
-  const [landlordId, setLandlordId] = useState(null);
-
-  const [amenities, setAmenities] = useState({
-    hasWifi: false,
-    hasParking: false,
-    hasAirConditioner: false,
-    hasKitchen: false,
-    hasElevator: false,
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    price: "",
+    address: "",
+    district: "",
+    ward: "",
+    city: "",
+    roomType: "Single",
+    area: "",
+    availability: true,
+    electricityCost: "",
+    waterCost: "",
+    internetCost: "",
+    cleaningCost: "",
+    securityCost: "",
+    amenities: {
+      hasWifi: false,
+      hasParking: false,
+      hasAirConditioner: false,
+      hasKitchen: false,
+      hasElevator: false,
+    },
   });
 
   const [images, setImages] = useState([]);
-  const [selectedImages, setSelectedImages] = useState([]);
   const [videos, setVideos] = useState([]);
-  const [selectedVideos, setSelectedVideos] = useState([]);
+  const [landlordId, setLandlordId] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchUserProfile();
@@ -51,376 +82,493 @@ const CreatePost = () => {
         );
         setLandlordId(response.data._id);
       } else {
-        alert("Token không tồn tại, vui lòng đăng nhập lại!");
+        setError("Token không tồn tại, vui lòng đăng nhập lại!");
       }
     } catch (error) {
       console.error("Lỗi khi lấy thông tin người dùng:", error);
+      setError("Không thể lấy thông tin người dùng. Vui lòng thử lại sau.");
     }
   };
 
-  const handleImageSelect = (event) => {
-    const files = event.target.files;
-    const imageUrls = Array.from(files).map((file) =>
-      URL.createObjectURL(file)
-    );
-    setSelectedImages((prevImages) => [...prevImages, ...imageUrls]); // Thêm vào mảng cũ
-    setImages((prevFiles) => [...prevFiles, ...Array.from(files)]); // Thêm vào mảng cũ
-  };
-
-  const handleToggleAmenity = (key) => {
-    setAmenities((prev) => ({
-      ...prev,
-      [key]: !prev[key],
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevState) => ({
+      ...prevState,
+      [name]: value,
     }));
   };
 
-  const handleSubmit = async () => {
+  const handleAmenityToggle = (key) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      amenities: {
+        ...prevState.amenities,
+        [key]: !prevState.amenities[key],
+      },
+    }));
+  };
+
+  const handleImageSelect = (event) => {
+    const files = Array.from(event.target.files);
+    setImages((prevImages) => [...prevImages, ...files]);
+  };
+
+  const handleVideoSelect = (event) => {
+    const files = Array.from(event.target.files);
+    setVideos((prevVideos) => [...prevVideos, ...files]);
+  };
+
+  const removeImage = (index) => {
+    setImages((prevImages) => prevImages.filter((_, i) => i !== index));
+  };
+
+  const removeVideo = (index) => {
+    setVideos((prevVideos) => prevVideos.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!landlordId) {
-      alert("Không thể lấy ID người cho thuê. Vui lòng thử lại!");
+      setError("Không thể lấy ID người cho thuê. Vui lòng thử lại!");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("price", price);
-    formData.append(
-      "location",
-      JSON.stringify({
-        address,
-        city,
-        district,
-        ward,
-      })
-    );
-    formData.append("landlord", landlordId);
-    formData.append("roomType", roomType);
-    formData.append("size", area);
-    formData.append("availability", availability);
-    formData.append("amenities", JSON.stringify(amenities));
-    formData.append(
-      "additionalCosts",
-      JSON.stringify({
-        electricity: electricityCost,
-        water: waterCost,
-        internet: internetCost,
-        cleaningService: cleaningCost,
-        security: securityCost,
-      })
-    );
-
-    for (let i = 0; i < images.length; i++) {
-      formData.append("images", images[i]); // Append trực tiếp File object
-    }
-
-    for (let i = 0; i < videos.length; i++) {
-      formData.append("videos", videos[i]);
-    }
-
     try {
+      // Create FormData object
+      const formDataToSend = new FormData();
+
+      // Add basic fields
+      formDataToSend.append("title", formData.title);
+      formDataToSend.append("description", formData.description);
+      formDataToSend.append("price", formData.price);
+      formDataToSend.append("size", formData.area);
+      formDataToSend.append("roomType", formData.roomType);
+      formDataToSend.append("availability", formData.availability);
+      formDataToSend.append("landlord", landlordId);
+
+      // Structure location data as expected by the API
+      const locationData = {
+        address: formData.address,
+        district: formData.district,
+        ward: formData.ward,
+        city: formData.city,
+      };
+      formDataToSend.append("location", JSON.stringify(locationData));
+
+      // Structure additional costs
+      const additionalCosts = {
+        electricity: formData.electricityCost,
+        water: formData.waterCost,
+        internet: formData.internetCost,
+        cleaningService: formData.cleaningCost,
+        security: formData.securityCost,
+      };
+      formDataToSend.append("additionalCosts", JSON.stringify(additionalCosts));
+
+      // Add amenities
+      formDataToSend.append("amenities", JSON.stringify(formData.amenities));
+
+      // Add media files
+      images.forEach((image) => {
+        formDataToSend.append("images", image);
+      });
+
+      videos.forEach((video) => {
+        formDataToSend.append("videos", video);
+      });
+
+      console.log("Sending data to API...");
+
+      // Use fetch instead of axios for better multipart/form-data handling
       const response = await fetch(
         "https://be-android-project.onrender.com/api/post/create",
         {
           method: "POST",
           headers: {
             Accept: "application/json",
+            // Don't set Content-Type header - let the browser set it with the boundary
           },
-          body: formData,
+          body: formDataToSend,
         }
       );
+
+      const responseData = await response.json();
 
       if (response.ok) {
         alert("Tạo bài viết thành công!");
         // Reset form
-        setTitle("");
-        setDescription("");
-        setPrice("");
-        setAddress("");
-        setDistrict("");
-        setWard("");
-        setCity("");
-        setRoomType("Single");
-        setArea("");
-        setAvailability(true);
-        setAmenities({
-          hasWifi: false,
-          hasParking: false,
-          hasAirConditioner: false,
-          hasKitchen: false,
-          hasElevator: false,
+        setFormData({
+          title: "",
+          description: "",
+          price: "",
+          address: "",
+          district: "",
+          ward: "",
+          city: "",
+          roomType: "Single",
+          area: "",
+          availability: true,
+          electricityCost: "",
+          waterCost: "",
+          internetCost: "",
+          cleaningCost: "",
+          securityCost: "",
+          amenities: {
+            hasWifi: false,
+            hasParking: false,
+            hasAirConditioner: false,
+            hasKitchen: false,
+            hasElevator: false,
+          },
         });
-        setElectricityCost("");
-        setWaterCost("");
-        setInternetCost("");
-        setCleaningCost("");
-        setSecurityCost("");
         setImages([]);
         setVideos([]);
       } else {
-        const errorText = await response.text();
-        alert(`Lỗi: ${errorText}`);
+        console.error("API error:", responseData);
+        setError(`Lỗi: ${responseData.message || "Không thể tạo bài đăng"}`);
       }
     } catch (error) {
-      alert("Đã xảy ra lỗi khi gọi API.");
-      console.error("Network Error:", error);
+      console.error("Lỗi khi gửi bài đăng:", error);
+      setError("Đã xảy ra lỗi khi đăng bài. Vui lòng thử lại sau.");
     }
   };
 
-  const handleVideoSelect = (event) => {
-    const files = event.target.files;
-    const videoUrls = Array.from(files).map((file) =>
-      URL.createObjectURL(file)
-    );
-    setSelectedVideos((prevVideos) => [...prevVideos, ...videoUrls]); // Thêm vào mảng cũ
-    setVideos((prevFiles) => [...prevFiles, ...Array.from(files)]); // Thêm vào mảng cũ
-  };
-
-  const removeVideo = (index) => {
-    const updatedVideos = selectedVideos.filter((_, i) => i !== index);
-    setSelectedVideos(updatedVideos);
-    const updatedVideoFiles = videos.filter((_, i) => i !== index);
-    setVideos(updatedVideoFiles);
-  };
-
-  const removeImage = (index) => {
-    const updatedImages = selectedImages.filter((_, i) => i !== index);
-    setSelectedImages(updatedImages);
-  };
-
   return (
-    <div className="add-listing-form">
-      <h1>Đăng tin</h1>
+    <PageWrapper>
+      <Container>
+        <FormCard onSubmit={handleSubmit}>
+          <FormTitle>Đăng tin cho thuê</FormTitle>
 
-      <label>Tiêu đề</label>
-      <input
-        type="text"
-        placeholder="Nhập tiêu đề"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
+          {error && <ErrorAlert>{error}</ErrorAlert>}
 
-      <label>Mô tả</label>
-      <textarea
-        placeholder="Nhập mô tả chi tiết"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
+          <FormSection>
+            <SectionTitle>Thông tin cơ bản</SectionTitle>
+            <FormGroup>
+              <Label htmlFor="title">Tiêu đề</Label>
+              <Input
+                id="title"
+                type="text"
+                name="title"
+                placeholder="Nhập tiêu đề bài đăng"
+                value={formData.title}
+                onChange={handleInputChange}
+                required
+              />
+            </FormGroup>
 
-      <label>Giá</label>
-      <input
-        type="number"
-        placeholder="Nhập giá"
-        value={price}
-        onChange={(e) => setPrice(e.target.value)}
-      />
+            <FormGroup>
+              <Label htmlFor="description">Mô tả chi tiết</Label>
+              <TextArea
+                id="description"
+                name="description"
+                placeholder="Mô tả chi tiết về phòng trọ/căn hộ của bạn"
+                value={formData.description}
+                onChange={handleInputChange}
+                required
+                rows={5}
+              />
+            </FormGroup>
 
-      <label>Diện tích (m²)</label>
-      <input
-        type="number"
-        placeholder="Nhập diện tích"
-        value={area}
-        onChange={(e) => setArea(e.target.value)}
-      />
+            <FormRow>
+              <FormGroup>
+                <Label htmlFor="price">Giá thuê (VNĐ/tháng)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  name="price"
+                  placeholder="Ví dụ: 3,000,000"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  required
+                />
+              </FormGroup>
 
-      <label>Địa chỉ</label>
-      <input
-        type="text"
-        placeholder="Nhập địa chỉ"
-        value={address}
-        onChange={(e) => setAddress(e.target.value)}
-      />
+              <FormGroup>
+                <Label htmlFor="area">Diện tích (m²)</Label>
+                <Input
+                  id="area"
+                  type="number"
+                  name="area"
+                  placeholder="Ví dụ: 25"
+                  value={formData.area}
+                  onChange={handleInputChange}
+                  required
+                />
+              </FormGroup>
+            </FormRow>
 
-      <label>Quận</label>
-      <input
-        type="text"
-        placeholder="Nhập quận"
-        value={district}
-        onChange={(e) => setDistrict(e.target.value)}
-      />
+            <FormGroup>
+              <Label htmlFor="roomType">Loại phòng</Label>
+              <Select
+                id="roomType"
+                name="roomType"
+                value={formData.roomType}
+                onChange={handleInputChange}
+              >
+                <option value="Single">Phòng đơn</option>
+                <option value="Double">Phòng đôi</option>
+                <option value="Shared">Phòng ở ghép</option>
+                <option value="Apartment">Căn hộ</option>
+                <option value="Dormitory">Ký túc xá</option>
+              </Select>
+            </FormGroup>
+          </FormSection>
 
-      <label>Phường</label>
-      <input
-        type="text"
-        placeholder="Nhập phường"
-        value={ward}
-        onChange={(e) => setWard(e.target.value)}
-      />
+          <FormDivider />
 
-      <label>Thành phố</label>
-      <input
-        type="text"
-        placeholder="Nhập thành phố"
-        value={city}
-        onChange={(e) => setCity(e.target.value)}
-      />
+          <FormSection>
+            <SectionTitle>Địa chỉ</SectionTitle>
+            <FormGroup>
+              <Label htmlFor="address">Địa chỉ cụ thể</Label>
+              <Input
+                id="address"
+                type="text"
+                name="address"
+                placeholder="Số nhà, tên đường"
+                value={formData.address}
+                onChange={handleInputChange}
+                required
+              />
+            </FormGroup>
 
-      <label>Loại phòng</label>
-      <select value={roomType} onChange={(e) => setRoomType(e.target.value)}>
-        <option value="Single">Single</option>
-        <option value="Double">Double</option>
-        <option value="Shared">Shared</option>
-        <option value="Apartment">Apartment</option>
-        <option value="Dormitory">Dormitory</option>
-      </select>
+            <FormRow>
+              <FormGroup>
+                <Label htmlFor="ward">Phường/Xã</Label>
+                <Input
+                  id="ward"
+                  type="text"
+                  name="ward"
+                  placeholder="Tên phường/xã"
+                  value={formData.ward}
+                  onChange={handleInputChange}
+                  required
+                />
+              </FormGroup>
 
-      <div className="form-section">
-        <h2>Chi phí hàng tháng</h2>
-        <div className="form-row">
-          <div className="form-group">
-            <label>Tiền điện (VNĐ/kWh)</label>
-            <input
-              type="number"
-              placeholder="Nhập giá điện"
-              value={electricityCost}
-              onChange={(e) => setElectricityCost(e.target.value)}
-            />
-          </div>
+              <FormGroup>
+                <Label htmlFor="district">Quận/Huyện</Label>
+                <Input
+                  id="district"
+                  type="text"
+                  name="district"
+                  placeholder="Tên quận/huyện"
+                  value={formData.district}
+                  onChange={handleInputChange}
+                  required
+                />
+              </FormGroup>
+            </FormRow>
 
-          <div className="form-group">
-            <label>Tiền nước (VNĐ/m³)</label>
-            <input
-              type="number"
-              placeholder="Nhập giá nước"
-              value={waterCost}
-              onChange={(e) => setWaterCost(e.target.value)}
-            />
-          </div>
-        </div>
+            <FormGroup>
+              <Label htmlFor="city">Thành phố</Label>
+              <Input
+                id="city"
+                type="text"
+                name="city"
+                placeholder="Tên thành phố"
+                value={formData.city}
+                onChange={handleInputChange}
+                required
+              />
+            </FormGroup>
+          </FormSection>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label>Internet (VNĐ/tháng)</label>
-            <input
-              type="number"
-              placeholder="Nhập phí internet"
-              value={internetCost}
-              onChange={(e) => setInternetCost(e.target.value)}
-            />
-          </div>
+          <FormDivider />
 
-          <div className="form-group">
-            <label>Dọn dẹp (VNĐ/tháng)</label>
-            <input
-              type="number"
-              placeholder="Nhập phí dọn dẹp"
-              value={cleaningCost}
-              onChange={(e) => setCleaningCost(e.target.value)}
-            />
-          </div>
-        </div>
+          <FormSection>
+            <SectionTitle>Chi phí hàng tháng</SectionTitle>
+            <FormRow>
+              <FormGroup>
+                <Label htmlFor="electricityCost">Tiền điện (VNĐ/kWh)</Label>
+                <Input
+                  id="electricityCost"
+                  type="number"
+                  name="electricityCost"
+                  placeholder="Ví dụ: 3,500"
+                  value={formData.electricityCost}
+                  onChange={handleInputChange}
+                />
+              </FormGroup>
 
-        <div className="form-group">
-          <label>Bảo vệ (VNĐ/tháng)</label>
-          <input
-            type="number"
-            placeholder="Nhập phí bảo vệ"
-            value={securityCost}
-            onChange={(e) => setSecurityCost(e.target.value)}
-          />
-        </div>
-      </div>
+              <FormGroup>
+                <Label htmlFor="waterCost">Tiền nước (VNĐ/m³)</Label>
+                <Input
+                  id="waterCost"
+                  type="number"
+                  name="waterCost"
+                  placeholder="Ví dụ: 15,000"
+                  value={formData.waterCost}
+                  onChange={handleInputChange}
+                />
+              </FormGroup>
+            </FormRow>
 
-      <div className="amenities">
-        <h3>Tiện ích</h3>
-        <label>
-          <input
-            type="checkbox"
-            checked={amenities.hasWifi}
-            onChange={() => handleToggleAmenity("hasWifi")}
-          />
-          Wifi
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={amenities.hasParking}
-            onChange={() => handleToggleAmenity("hasParking")}
-          />
-          Chỗ đỗ xe
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={amenities.hasAirConditioner}
-            onChange={() => handleToggleAmenity("hasAirConditioner")}
-          />
-          Điều hòa
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={amenities.hasKitchen}
-            onChange={() => handleToggleAmenity("hasKitchen")}
-          />
-          Bếp
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={amenities.hasElevator}
-            onChange={() => handleToggleAmenity("hasElevator")}
-          />
-          Thang máy
-        </label>
-      </div>
+            <FormRow>
+              <FormGroup>
+                <Label htmlFor="internetCost">Internet (VNĐ/tháng)</Label>
+                <Input
+                  id="internetCost"
+                  type="number"
+                  name="internetCost"
+                  placeholder="Ví dụ: 200,000"
+                  value={formData.internetCost}
+                  onChange={handleInputChange}
+                />
+              </FormGroup>
 
-      <div className="media-upload">
-        <label>Hình ảnh phòng trọ</label>
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleImageSelect}
-        />
+              <FormGroup>
+                <Label htmlFor="cleaningCost">Dọn dẹp (VNĐ/tháng)</Label>
+                <Input
+                  id="cleaningCost"
+                  type="number"
+                  name="cleaningCost"
+                  placeholder="Ví dụ: 100,000"
+                  value={formData.cleaningCost}
+                  onChange={handleInputChange}
+                />
+              </FormGroup>
+            </FormRow>
 
-        <div className="media-preview">
-          {/* Hiển thị ảnh đã chọn */}
-          {selectedImages.length > 0 && (
-            <div>
-              <h4>Hình ảnh đã chọn</h4>
-              {selectedImages.map((imageUrl, index) => (
-                <div key={index}>
-                  <img
-                    src={imageUrl}
-                    alt={`image-${index}`}
-                    width="100"
-                    height="100"
-                  />
-                  <button onClick={() => removeImage(index)}>Xóa</button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        <label>Video phòng trọ</label>
-        <input
-          type="file"
-          accept="video/*"
-          multiple
-          onChange={handleVideoSelect}
-        />
-        <div className="media-preview">
-          {selectedVideos.length > 0 && (
-            <div>
-              <h4>Video đã chọn</h4>
-              {selectedVideos.map((videoUrl, index) => (
-                <div key={index}>
-                  <video width="200" controls>
-                    <source src={videoUrl} type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
-                  <button onClick={() => removeVideo(index)}>Xóa</button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+            <FormGroup>
+              <Label htmlFor="securityCost">Bảo vệ (VNĐ/tháng)</Label>
+              <Input
+                id="securityCost"
+                type="number"
+                name="securityCost"
+                placeholder="Ví dụ: 50,000"
+                value={formData.securityCost}
+                onChange={handleInputChange}
+              />
+            </FormGroup>
+          </FormSection>
 
-      <button className="submit-button" onClick={handleSubmit}>
-        Đăng bài
-      </button>
-    </div>
+          <FormDivider />
+
+          <FormSection>
+            <SectionTitle>Tiện ích</SectionTitle>
+            <AmenitiesGrid>
+              <AmenityItem
+                active={formData.amenities.hasWifi}
+                onClick={() => handleAmenityToggle("hasWifi")}
+              >
+                <IconWrapper active={formData.amenities.hasWifi}>
+                  <FaWifi />
+                </IconWrapper>
+                <span>Wifi</span>
+              </AmenityItem>
+
+              <AmenityItem
+                active={formData.amenities.hasParking}
+                onClick={() => handleAmenityToggle("hasParking")}
+              >
+                <IconWrapper active={formData.amenities.hasParking}>
+                  <FaParking />
+                </IconWrapper>
+                <span>Chỗ đỗ xe</span>
+              </AmenityItem>
+
+              <AmenityItem
+                active={formData.amenities.hasAirConditioner}
+                onClick={() => handleAmenityToggle("hasAirConditioner")}
+              >
+                <IconWrapper active={formData.amenities.hasAirConditioner}>
+                  <FaSnowflake />
+                </IconWrapper>
+                <span>Điều hòa</span>
+              </AmenityItem>
+
+              <AmenityItem
+                active={formData.amenities.hasKitchen}
+                onClick={() => handleAmenityToggle("hasKitchen")}
+              >
+                <IconWrapper active={formData.amenities.hasKitchen}>
+                  <FaUtensils />
+                </IconWrapper>
+                <span>Bếp</span>
+              </AmenityItem>
+
+              <AmenityItem
+                active={formData.amenities.hasElevator}
+                onClick={() => handleAmenityToggle("hasElevator")}
+              >
+                <IconWrapper active={formData.amenities.hasElevator}>
+                  <FaBuilding />
+                </IconWrapper>
+                <span>Thang máy</span>
+              </AmenityItem>
+            </AmenitiesGrid>
+          </FormSection>
+
+          <FormDivider />
+
+          <FormSection>
+            <SectionTitle>Hình ảnh và Video</SectionTitle>
+            <MediaUploadSection>
+              <FormGroup>
+                <Label htmlFor="images">Hình ảnh phòng trọ</Label>
+                <Input
+                  id="images"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageSelect}
+                />
+                <p className="hint">
+                  Chọn nhiều hình ảnh để hiển thị phòng trọ của bạn
+                </p>
+              </FormGroup>
+
+              {images.length > 0 && (
+                <MediaPreview>
+                  {images.map((image, index) => (
+                    <MediaItem key={`image-${index}`}>
+                      <img
+                        src={URL.createObjectURL(image) || "/placeholder.svg"}
+                        alt={`Preview ${index}`}
+                      />
+                      <button type="button" onClick={() => removeImage(index)}>
+                        ×
+                      </button>
+                    </MediaItem>
+                  ))}
+                </MediaPreview>
+              )}
+            </MediaUploadSection>
+
+            <MediaUploadSection>
+              <FormGroup>
+                <Label htmlFor="videos">Video phòng trọ</Label>
+                <Input
+                  id="videos"
+                  type="file"
+                  accept="video/*"
+                  multiple
+                  onChange={handleVideoSelect}
+                />
+                <p className="hint">
+                  Thêm video để người thuê có cái nhìn tổng quan hơn
+                </p>
+              </FormGroup>
+
+              {videos.length > 0 && (
+                <MediaPreview>
+                  {videos.map((video, index) => (
+                    <MediaItem key={`video-${index}`} isVideo>
+                      <video src={URL.createObjectURL(video)} controls />
+                      <button type="button" onClick={() => removeVideo(index)}>
+                        ×
+                      </button>
+                    </MediaItem>
+                  ))}
+                </MediaPreview>
+              )}
+            </MediaUploadSection>
+          </FormSection>
+
+          <SubmitButton type="submit">Đăng bài</SubmitButton>
+        </FormCard>
+      </Container>
+    </PageWrapper>
   );
 };
 

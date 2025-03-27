@@ -1,81 +1,245 @@
-/* General styles for the header */
-.header {
-  background-color: #007bff; /* Màu xanh dương đậm hơn */
-  padding: 20px 0;
+/* Header Container */
+.header-container {
+  background-color: #fff;
+  border-bottom: 2px solid #0056b3;
+  position: relative;
+}
+
+/* Top Bar */
+.top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Thêm bóng đổ */
+  padding: 10px 20px;
+  flex-wrap: wrap;
 }
 
-.logo h1 {
-  font-size: 2rem;
+/* Logo */
+.logo-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-text {
+  font-size: 2em;
+  color: #0056b3;
+  margin: 0;
+  font-weight: bold;
+}
+
+.logo-subtext {
+  font-size: 0.9em;
+  margin: 0;
+  color: #666;
+}
+
+/* Top Navigation */
+.top-nav {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.top-nav-link {
+  color: #333;
+  text-decoration: none;
+  font-size: 1em;
+}
+
+.user-info {
+  color: #333;
+  cursor: pointer;
+}
+
+.post-button {
+  background-color: #ff5733;
   color: white;
+  text-decoration: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 1.1em;
+  font-weight: bold;
+}
+
+/* Notification */
+.notification-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.notification-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.notification-header {
+  padding: 10px 15px;
+  margin: 0;
+  border-bottom: 1px solid #eee;
+  font-weight: bold;
+}
+
+.notification-item {
+  padding: 10px 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.notification-user {
+  font-weight: bold;
+  margin: 0 0 5px 0;
+}
+
+.notification-message {
+  margin: 0 0 5px 0;
+}
+
+.notification-date {
+  font-size: 0.8em;
+  color: #666;
   margin: 0;
 }
 
-.logo p {
-  font-size: 1rem;
-  color: #ffeb3b; /* Màu vàng cho đoạn mô tả nhỏ */
-  margin-top: 5px;
+.no-notification {
+  padding: 10px 15px;
+  text-align: center;
+  color: #666;
 }
 
-/* Navbar styles */
-.navbar ul {
+/* Navbar */
+.navbar {
+  background-color: #0056b3;
+  padding: 10px 0;
+}
+
+.navbar-list {
   display: flex;
+  gap: 20px;
+  justify-content: center;
   list-style: none;
   margin: 0;
   padding: 0;
+  flex-wrap: wrap;
 }
 
-.navbar ul li {
-  margin: 0 15px;
+.navbar-item {
+  display: inline-block;
+  margin: 5px 0;
 }
 
-.navbar ul li a {
+.nav-link {
   color: white;
   text-decoration: none;
-  font-size: 1.1rem;
-  font-weight: bold;
-  transition: color 0.3s ease;
+  font-size: 1.1em;
+  padding: 5px 10px;
 }
 
-/* Hover effect on links */
-.navbar ul li a:hover {
-  color: #ffeb3b; /* Đổi sang màu vàng khi hover */
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Thêm bóng khi hover */
+/* Mobile Menu Button */
+.mobile-menu-button {
+  display: none;
 }
 
-/* Styles for auth buttons */
-.auth-buttons {
+.mobile-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  color: #0056b3;
+}
+
+/* Mobile Menu */
+.mobile-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: white;
+  z-index: 1000;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 10px 0;
+}
+
+.mobile-menu-links {
   display: flex;
+  flex-direction: column;
+  padding: 0 20px;
 }
 
-.login-button,
-.register-button {
-  padding: 10px 20px;
-  border-radius: 5px;
+.mobile-link {
+  color: #333;
+  text-decoration: none;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 1em;
+  cursor: pointer;
+}
+
+.mobile-user-info {
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
   font-weight: bold;
+  color: #0056b3;
+}
+
+.mobile-post-button {
+  background-color: #ff5733;
   color: white;
   text-decoration: none;
-  margin-left: 10px;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+  padding: 12px 20px;
+  border-radius: 5px;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin: 10px 0;
+  text-align: center;
 }
 
-.login-button {
-  background-color: #28a745; /* Màu xanh lá cho đăng nhập */
+.mobile-nav-divider {
+  height: 1px;
+  background-color: #0056b3;
+  margin: 10px 0;
 }
 
-.register-button {
-  background-color: #c61426; /* Màu đỏ cho đăng ký */
-}
+/* Media Queries */
+@media (max-width: 768px) {
+  .logo-text {
+    font-size: 1.5em;
+  }
 
-.login-button:hover {
-  background-color: #882121; /* Màu xanh lá đậm hơn khi hover */
-  transform: scale(1.05); /* Tăng kích thước nhẹ khi hover */
-}
+  .logo-subtext {
+    font-size: 0.8em;
+  }
 
-.register-button:hover {
-  background-color: #c82333; /* Màu đỏ đậm hơn khi hover */
-  transform: scale(1.05);
+  .top-nav {
+    display: none;
+  }
+
+  .navbar {
+    display: none;
+  }
+
+  .mobile-menu-button {
+    display: block;
+  }
+
+  .notification-dropdown {
+    width: calc(100vw - 40px);
+    right: -10px;
+  }
 }

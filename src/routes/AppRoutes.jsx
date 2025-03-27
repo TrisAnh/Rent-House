@@ -14,6 +14,7 @@ import Profile from "../pages/Profile";
 import { useAuth } from "../hooks/useAuth";
 import Header from "../components/common/Header";
 import Footer from "../components/common/Footer";
+import HearderReponsive from "../components/common/Header_reponsive";
 import OTP from "../pages/OTP";
 import ForgotPassword from "../pages/ForgotPassword";
 import EditProfile from "../pages/EditProfile";
@@ -34,6 +35,9 @@ import SharedListings from "../pages/SharedListings";
 import Blog from "../pages/Blog";
 import BlogDetail from "../pages/BlogDetail";
 import BookingDetailsUser from "../pages/InforBookingUser";
+// Import the ChatMessenger component
+import ChatMessenger from "../pages/ChatMessenger";
+
 const AppRoutes = () => {
   const { user, user_role } = useAuth();
   console.log("approute", user_role);
@@ -90,6 +94,9 @@ const AppRoutes = () => {
         <Route path="/blog/:id" element={<BlogDetail />} />
         <Route path="/inforbooking" element={<BookingDetailsUser />} />
       </Routes>
+
+      {user && <ChatMessenger />}
+
       <Footer />
     </Router>
   );

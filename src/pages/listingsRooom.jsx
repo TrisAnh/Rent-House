@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import styled from "styled-components";
+"use client";
+
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
 import {
@@ -8,423 +9,28 @@ import {
   FaWifi,
   FaParking,
   FaSnowflake,
-  FaUtensils,
-  FaRoute,
-  FaChevronDown,
   FaHeart,
   FaClock,
   FaEye,
+  FaMapMarkerAlt,
+  FaFilter,
+  FaSearch,
+  FaHome,
+  FaRegBuilding,
+  FaChevronDown,
+  FaChevronUp,
+  FaListAlt,
+  FaPhone,
+  FaCommentDots,
 } from "react-icons/fa";
-import { ArrowUpDown } from "lucide-react";
 import {
   getPostByRoomType,
   getPostByDistrict,
   getDistricts,
   getLatestPosts,
+  searchPost,
+  getAllBlogs,
 } from "../api/post";
-
-const Container = styled.div`
-  min-height: 100vh;
-  background-color: #f8fafc;
-  padding: 2rem 1rem;
-
-  @media (min-width: 768px) {
-    padding: 2rem;
-  }
-`;
-
-const MainContent = styled.div`
-  max-width: 1400px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 2rem;
-
-  @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const ContentArea = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  padding: 1.5rem;
-`;
-
-const Header = styled.div`
-  text-align: center;
-  margin-bottom: 2rem;
-  padding: 1rem;
-  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
-  border-radius: 12px;
-`;
-
-const Title = styled.h1`
-  font-size: 2rem;
-  color: #0050b3;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-
-  @media (max-width: 640px) {
-    font-size: 1.5rem;
-  }
-`;
-
-const FiltersContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: center;
-  margin-bottom: 2rem;
-  padding: 1rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-`;
-
-const FilterButton = styled.button`
-  padding: 0.75rem 1.5rem;
-  border-radius: 9999px;
-  border: 2px solid ${(props) => (props.$active ? "#1890ff" : "#e6f7ff")};
-  font-size: 0.95rem;
-  font-weight: 500;
-  background-color: ${(props) => (props.$active ? "#1890ff" : "white")};
-  color: ${(props) => (props.$active ? "white" : "#595959")};
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(24, 144, 255, 0.1);
-    border-color: #1890ff;
-    color: ${(props) => (props.$active ? "white" : "#1890ff")};
-  }
-`;
-
-const DistrictDropdown = styled.div`
-  position: relative;
-  display: inline-block;
-`;
-
-const DistrictButton = styled(FilterButton)`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
-const DistrictList = styled.div`
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background-color: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 0.5rem;
-  z-index: 10;
-  max-height: 200px;
-  overflow-y: auto;
-  display: ${(props) => (props.$show ? "grid" : "none")};
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-  width: 300px;
-`;
-
-const DistrictItem = styled.button`
-  padding: 0.5rem;
-  border: none;
-  background-color: #f7fafc;
-  color: #4a5568;
-  cursor: pointer;
-  border-radius: 5px;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background-color: #e6f7ff;
-  }
-`;
-
-const ListingsGrid = styled.div`
-  display: grid;
-  gap: 1.5rem;
-`;
-
-const ListingCard = styled(Link)`
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-  text-decoration: none;
-  color: inherit;
-  border: 1px solid #e2e8f0;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border-color: #2563eb;
-  }
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const ListingImageContainer = styled.div`
-  position: relative;
-  height: 220px;
-  overflow: hidden;
-
-  @media (max-width: 768px) {
-    height: 200px;
-  }
-`;
-
-const ListingImage = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-
-  ${ListingCard}:hover & {
-    transform: scale(1.05);
-  }
-`;
-
-const ListingContent = styled.div`
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-`;
-
-const ListingTitle = styled.h2`
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1e40af;
-  margin-bottom: 0.25rem;
-  line-height: 1.4;
-`;
-
-const ListingPrice = styled.div`
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #dc2626;
-`;
-
-const ListingLocation = styled.p`
-  font-size: 0.95rem;
-  color: #64748b;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  svg {
-    color: #2563eb;
-    font-size: 1.1rem;
-  }
-`;
-
-const ListingDetails = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: auto;
-  padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
-`;
-
-const ListingDetail = styled.span`
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: #f8fafc;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  color: #475569;
-
-  svg {
-    color: #2563eb;
-  }
-`;
-
-const RoomTypeTag = styled.span`
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  padding: 0.5rem 1rem;
-  background: rgba(37, 99, 235, 0.9);
-  color: white;
-  border-radius: 9999px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  backdrop-filter: blur(4px);
-`;
-
-const TimeStamp = styled.div`
-  font-size: 0.8rem;
-  color: #666;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-`;
-
-const ViewDetailButton = styled.span`
-  display: inline-block;
-  padding: 0.8rem 1.5rem;
-  background-color: #4299e1;
-  color: #ffffff;
-  text-decoration: none;
-  border-radius: 25px;
-  font-weight: bold;
-  transition: background-color 0.3s ease, transform 0.3s ease;
-
-  &:hover {
-    background-color: #3182ce;
-    transform: translateY(-2px);
-  }
-`;
-
-const ErrorMessage = styled.div`
-  color: #e53e3e;
-  text-align: center;
-  font-size: 1.2rem;
-  margin-top: 2rem;
-`;
-
-const LoadingMessage = styled.div`
-  color: #718096;
-  text-align: center;
-  font-size: 1.2rem;
-  margin-top: 2rem;
-`;
-
-const PaginationContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e2e8f0;
-`;
-
-const PaginationButton = styled.button`
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  border: 2px solid #2563eb;
-  background: ${(props) => (props.disabled ? "#f1f5f9" : "white")};
-  color: ${(props) => (props.disabled ? "#94a3b8" : "#2563eb")};
-  font-weight: 500;
-  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
-  transition: all 0.2s ease;
-
-  &:not(:disabled):hover {
-    background: #2563eb;
-    color: white;
-  }
-`;
-
-const Sidebar = styled.aside`
-  @media (max-width: 1024px) {
-    display: none;
-  }
-`;
-
-const SidebarCard = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-`;
-
-const SidebarTitle = styled.h2`
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1e40af;
-  padding: 1.25rem;
-  border-bottom: 2px solid #e2e8f0;
-`;
-
-const RecentListingCard = styled(Link)`
-  display: flex;
-  gap: 1rem;
-  padding: 1rem;
-  text-decoration: none;
-  color: inherit;
-  transition: all 0.2s ease;
-  border-bottom: 1px solid #e6f7ff;
-
-  &:hover {
-    background: #f0f9ff;
-  }
-
-  &:last-child {
-    border-bottom: none;
-  }
-`;
-
-const RecentListingImage = styled.img`
-  width: 100px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 6px;
-`;
-
-const RecentListingContent = styled.div`
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-`;
-
-const RecentListingTitle = styled.h3`
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #1e40af;
-  margin-bottom: 0.5rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
-const RecentListingPrice = styled.div`
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #dc2626;
-`;
-
-const RecentListingFooter = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0.5rem;
-  font-size: 0.8rem;
-  color: #8c8c8c;
-`;
-
-const ListingFooter = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
-  font-size: 0.9rem;
-  color: #7f8c8d;
-`;
-
-const ListingViews = styled.span`
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.9rem;
-  color: #7f8c8d;
-`;
 
 const Listings = () => {
   const [listings, setListings] = useState([]);
@@ -437,14 +43,20 @@ const Listings = () => {
   const [roomType, setRoomType] = useState("all");
   const [showDistrictList, setShowDistrictList] = useState(false);
   const [recentListings, setRecentListings] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [totalRooms, setTotalRooms] = useState(0);
+  const [blogs, setBlogs] = useState([]);
+  const [footerExpanded, setFooterExpanded] = useState(false);
 
-  const ITEMS_PER_PAGE = 9;
+  const ITEMS_PER_PAGE = 6;
 
   const location = useLocation();
 
   useEffect(() => {
     fetchDistricts();
     fetchRecentListings();
+    fetchTotalRooms();
+    fetchBlogs();
     const searchParams = new URLSearchParams(location.search);
     const districtParam = searchParams.get("district");
     const roomTypeParam = searchParams.get("roomType");
@@ -459,6 +71,21 @@ const Listings = () => {
       fetchAllListings();
     }
   }, [location]);
+
+  const fetchTotalRooms = async () => {
+    try {
+      const allListings = await Promise.all([
+        getPostByRoomType("Single"),
+        getPostByRoomType("Double"),
+      ]);
+      const flattenedListings = allListings.flatMap(
+        (response) => response.data || []
+      );
+      setTotalRooms(flattenedListings.length);
+    } catch (err) {
+      console.error("Error fetching total rooms:", err);
+    }
+  };
 
   const fetchDistricts = async () => {
     try {
@@ -476,6 +103,15 @@ const Listings = () => {
       setRecentListings(response.data || []);
     } catch (err) {
       console.error("Error fetching recent listings:", err);
+    }
+  };
+
+  const fetchBlogs = async () => {
+    try {
+      const response = await getAllBlogs();
+      setBlogs(response.data || []);
+    } catch (err) {
+      console.error("Error fetching blogs:", err);
     }
   };
 
@@ -572,9 +208,43 @@ const Listings = () => {
     }
   };
 
+  const fetchListingsByPriceRange = async (priceMin, priceMax) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await searchPost({ priceMin, priceMax });
+      if (Array.isArray(response.data)) {
+        setListings(response.data);
+        setTotalPages(Math.ceil(response.data.length / ITEMS_PER_PAGE));
+        if (response.data.length === 0) {
+          setError(
+            `Không tìm thấy phòng trọ trong khoảng giá ${priceMin.toLocaleString()} - ${priceMax.toLocaleString()} VND. Vui lòng thử lại với khoảng giá khác.`
+          );
+        }
+      } else {
+        console.error("Error: Invalid response data from API for price range");
+        setError(
+          `Không thể tải danh sách phòng trong khoảng giá. Vui lòng thử lại sau.`
+        );
+        setListings([]);
+      }
+      setSelectedDistrict("");
+      setRoomType("all");
+      setCurrentPage(1);
+    } catch (err) {
+      console.error(`Error fetching listings for price range:`, err);
+      setError(
+        `Không thể tải danh sách phòng trong khoảng giá. Vui lòng thử lại sau.`
+      );
+      setListings([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const toggleDistrictList = () => {
@@ -587,173 +257,733 @@ const Listings = () => {
     fetchListingsByDistrict(district);
   };
 
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const filteredListings = listings.filter(
+    (listing) =>
+      listing.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      listing.location.address
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      listing.location.district.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (loading) {
-    return <LoadingMessage>Đang tải...</LoadingMessage>;
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-gray-100 border-t-blue-500 rounded-full animate-spin mx-auto mb-6"></div>
+          <p className="text-sm font-medium text-gray-700">
+            Đang tải dữ liệu...
+          </p>
+        </div>
+      </div>
+    );
   }
 
-  const paginatedListings = listings.slice(
+  const paginatedListings = filteredListings.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
+  const getCategoryTitle = () => {
+    if (selectedDistrict) {
+      return `Phòng trọ tại ${selectedDistrict}`;
+    } else if (roomType === "Single") {
+      return "Phòng đơn";
+    } else if (roomType === "Double") {
+      return "Phòng đôi";
+    } else if (searchTerm) {
+      return `Kết quả tìm kiếm: "${searchTerm}"`;
+    } else {
+      return "Tất cả phòng trọ";
+    }
+  };
+
+  const getCategoryIcon = () => {
+    if (roomType === "Single") {
+      return <FaBed />;
+    } else if (roomType === "Double") {
+      return <FaHome />;
+    } else {
+      return <FaRegBuilding />;
+    }
+  };
+
   return (
-    <Container>
-      <Header>
-        <Title>Phòng Trọ Cho Thuê tại TP.HCM</Title>
-        <FiltersContainer>
-          <FilterButton
-            $active={roomType === "all" && selectedDistrict === ""}
-            onClick={fetchAllListings}
-          >
-            Tất cả
-          </FilterButton>
-          <FilterButton
-            $active={roomType === "Single"}
-            onClick={() => fetchListingsByRoomType("Single")}
-          >
-            Phòng đơn
-          </FilterButton>
-          <FilterButton
-            $active={roomType === "Double"}
-            onClick={() => fetchListingsByRoomType("Double")}
-          >
-            Phòng đôi
-          </FilterButton>
-          <DistrictDropdown>
-            <DistrictButton onClick={toggleDistrictList}>
-              {selectedDistrict || "Chọn quận"} <FaChevronDown />
-            </DistrictButton>
-            <DistrictList $show={showDistrictList}>
-              {districts.map((district) => (
-                <DistrictItem
-                  key={district}
-                  onClick={() => handleDistrictSelect(district)}
-                >
-                  {district}
-                </DistrictItem>
-              ))}
-            </DistrictList>
-          </DistrictDropdown>
-        </FiltersContainer>
-      </Header>
+    <div className="min-h-screen bg-white font-sans text-sm">
+      {/* Hero Header - Changed to white background with black text */}
+      <div className="bg-white text-black border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto">
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl mb-3">
+              Phòng Trọ Cho Thuê tại TP.HCM
+            </h1>
+            <p className="text-sm text-gray-600 mb-4">
+              Tìm kiếm phòng trọ, căn hộ với đầy đủ tiện nghi và giá cả phù hợp
+            </p>
 
-      <MainContent>
-        <ContentArea>
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-          <ListingsGrid>
-            {paginatedListings.map((listing) => (
-              <ListingCard key={listing._id} to={`/listings/${listing._id}`}>
-                <ListingImageContainer>
-                  <ListingImage
-                    src={
-                      listing.images[0]?.url ||
-                      "/placeholder.svg?height=200&width=300"
-                    }
-                    alt={listing.title}
-                  />
-                  <RoomTypeTag>
-                    {listing.roomType === "Single" ? "Phòng đơn" : "Phòng đôi"}
-                  </RoomTypeTag>
-                </ListingImageContainer>
-                <ListingContent>
-                  <ListingTitle>{listing.title}</ListingTitle>
-                  <ListingLocation>
-                    <FaRoute />
-                    {listing.location.address}, {listing.location.district}
-                  </ListingLocation>
-                  <ListingPrice>
-                    {listing.price.toLocaleString()} VND/tháng
-                  </ListingPrice>
-                  <ListingDetails>
-                    <ListingDetail>
-                      <FaRulerCombined />
-                      {listing.size} m²
-                    </ListingDetail>
-                    {listing.amenities.hasWifi && (
-                      <ListingDetail>
-                        <FaWifi />
-                        Wifi
-                      </ListingDetail>
-                    )}
-                    {listing.amenities.hasParking && (
-                      <ListingDetail>
-                        <FaParking />
-                        Bãi đỗ xe
-                      </ListingDetail>
-                    )}
-                    {listing.amenities.hasAirConditioner && (
-                      <ListingDetail>
-                        <FaSnowflake />
-                        Điều hòa
-                      </ListingDetail>
-                    )}
-                  </ListingDetails>
-                  <ListingFooter>
-                    <ListingViews>
-                      <FaEye /> {listing.views || 0} lượt xem
-                    </ListingViews>
-                    <TimeStamp>
-                      <FaClock />
-                      {new Date(listing.createdAt).toLocaleString("vi-VN")}
-                    </TimeStamp>
-                  </ListingFooter>
-                </ListingContent>
-              </ListingCard>
-            ))}
-          </ListingsGrid>
+            {/* Total Rooms Counter - Changed to bordered box with black text */}
+            <div className="bg-white border border-gray-200 rounded-lg py-3 px-6 inline-flex items-center gap-2 mt-2 shadow-sm">
+              <FaListAlt className="text-blue-500" />
+              <span className="font-bold text-gray-800">
+                Tổng số: {totalRooms} phòng trọ
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-          <PaginationContainer>
-            <PaginationButton
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
+      {/* Filter Bar */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 py-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={fetchAllListings}
+              className={`px-3 py-1.5 rounded-md font-medium text-xs flex items-center gap-1.5 transition-all ${
+                roomType === "all" && selectedDistrict === ""
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
             >
-              Trang trước
-            </PaginationButton>
-            <PaginationButton
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Trang sau
-            </PaginationButton>
-          </PaginationContainer>
-        </ContentArea>
+              <FaFilter className="text-xs" /> Tất cả
+            </button>
 
-        <Sidebar>
-          <SidebarCard>
-            <SidebarTitle>Tin mới đăng</SidebarTitle>
-            {recentListings.slice(0, 5).map((listing) => (
-              <RecentListingCard
-                key={listing._id}
-                to={`/listings/${listing._id}`}
+            <button
+              onClick={() => fetchListingsByRoomType("Single")}
+              className={`px-3 py-1.5 rounded-md font-medium text-xs flex items-center gap-1.5 transition-all ${
+                roomType === "Single"
+                  ? "bg-green-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              <FaBed className="text-xs" /> Phòng đơn
+            </button>
+
+            <button
+              onClick={() => fetchListingsByRoomType("Double")}
+              className={`px-3 py-1.5 rounded-md font-medium text-xs flex items-center gap-1.5 transition-all ${
+                roomType === "Double"
+                  ? "bg-purple-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              <FaHome className="text-xs" /> Phòng đôi
+            </button>
+
+            <div className="relative">
+              <button
+                onClick={toggleDistrictList}
+                className={`px-3 py-1.5 rounded-md font-medium text-xs flex items-center gap-1.5 transition-all ${
+                  selectedDistrict
+                    ? "bg-amber-500 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
               >
-                <RecentListingImage
-                  src={
-                    listing.images[0]?.url ||
-                    "/placeholder.svg?height=100&width=150"
-                  }
-                  alt={listing.title}
-                />
-                <RecentListingContent>
-                  <RecentListingTitle>{listing.title}</RecentListingTitle>
-                  <RecentListingPrice>
-                    {listing.price.toLocaleString()} VND/tháng
-                  </RecentListingPrice>
-                  <RecentListingFooter>
-                    <span>
-                      <FaClock />{" "}
-                      {new Date(listing.createdAt).toLocaleDateString("vi-VN")}
-                    </span>
-                    <span>
-                      <FaEye /> {listing.views || 0}
-                    </span>
-                  </RecentListingFooter>
-                </RecentListingContent>
-              </RecentListingCard>
-            ))}
-          </SidebarCard>
-        </Sidebar>
-      </MainContent>
-    </Container>
+                <FaMapMarkerAlt className="text-xs" />
+                {selectedDistrict || "Chọn quận"}
+                {showDistrictList ? (
+                  <FaChevronUp className="ml-1 text-xs" />
+                ) : (
+                  <FaChevronDown className="ml-1 text-xs" />
+                )}
+              </button>
+
+              {showDistrictList && (
+                <div className="absolute top-full left-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 w-48 max-h-60 overflow-y-auto z-50">
+                  {districts.map((district) => (
+                    <button
+                      key={district}
+                      onClick={() => handleDistrictSelect(district)}
+                      className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 transition-colors ${
+                        selectedDistrict === district
+                          ? "bg-amber-50 text-amber-700 font-medium"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      {district}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Search Bar */}
+            <div className="relative flex-grow ml-auto max-w-md">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FaSearch className="text-gray-400 text-xs" />
+              </div>
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo tên, địa chỉ..."
+                value={searchTerm}
+                onChange={handleSearch}
+                className="w-full pl-8 pr-3 py-1.5 border border-gray-300 rounded-md text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Main Content */}
+          <div className="lg:w-2/3">
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-4 rounded-md">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg
+                      className="h-4 w-4 text-red-500"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-red-700 text-xs">{error}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Category Header */}
+            {!loading && !error && (
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-md bg-gray-100 text-gray-700 flex items-center justify-center">
+                    {getCategoryIcon()}
+                  </div>
+                  <h2 className="text-base font-bold text-gray-800">
+                    {getCategoryTitle()}
+                  </h2>
+                </div>
+                <div className="text-xs font-medium text-blue-600">
+                  {filteredListings.length} kết quả
+                </div>
+              </div>
+            )}
+
+            {/* No Results */}
+            {!loading && paginatedListings.length === 0 && !error && (
+              <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200">
+                <FaSearch className="mx-auto text-3xl text-gray-300 mb-3" />
+                <p className="text-sm text-gray-700">
+                  Không tìm thấy kết quả phù hợp
+                </p>
+              </div>
+            )}
+
+            {/* Listings Grid */}
+            <div className="space-y-3">
+              {paginatedListings.map((listing) => {
+                const {
+                  _id,
+                  title,
+                  location,
+                  price,
+                  size,
+                  amenities,
+                  images,
+                  roomType,
+                  views,
+                  createdAt,
+                } = listing;
+                return (
+                  <Link
+                    key={_id}
+                    to={`/listings/${_id}`}
+                    className="block bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 transition-all hover:shadow-md hover:border-gray-300 group"
+                  >
+                    <div className="flex flex-col md:flex-row">
+                      {/* Image */}
+                      <div className="relative md:w-2/5">
+                        <div className="aspect-w-4 aspect-h-3 md:h-full">
+                          <img
+                            src={
+                              images[0]?.url ||
+                              "/placeholder.svg?height=240&width=320" ||
+                              "/placeholder.svg"
+                            }
+                            alt={title}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        </div>
+                        <div className="absolute top-2 left-2 bg-black/70 text-white text-xs font-medium px-2 py-0.5 rounded-md backdrop-blur-sm">
+                          {roomType === "Single" ? "Phòng đơn" : "Phòng đôi"}
+                        </div>
+                        <button className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/90 flex items-center justify-center transition-all hover:bg-white group-hover:scale-110">
+                          <FaHeart className="text-gray-400 group-hover:text-red-500 text-xs" />
+                        </button>
+                      </div>
+
+                      {/* Content */}
+                      <div className="p-3 flex flex-col flex-grow md:w-3/5">
+                        <h3 className="text-sm font-bold text-gray-800 mb-1 group-hover:text-blue-600 transition-colors line-clamp-1">
+                          {title}
+                        </h3>
+
+                        <div className="flex items-start gap-1.5 mb-1 text-gray-600 text-xs">
+                          <FaMapMarkerAlt className="text-amber-500 mt-0.5 flex-shrink-0 text-xs" />
+                          <span className="line-clamp-1">
+                            {location.address}, {location.district}
+                          </span>
+                        </div>
+
+                        <div className="text-sm font-bold text-red-600 mb-2">
+                          {price.toLocaleString()} VND/tháng
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5 mb-auto">
+                          <div className="flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-700 rounded-md text-xs font-medium">
+                            <FaRulerCombined className="text-xs" />
+                            <span>{size} m²</span>
+                          </div>
+
+                          {amenities.hasWifi && (
+                            <div className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-xs font-medium">
+                              <FaWifi className="text-xs" />
+                              <span>Wifi</span>
+                            </div>
+                          )}
+
+                          {amenities.hasParking && (
+                            <div className="flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-600 rounded-md text-xs font-medium">
+                              <FaParking className="text-xs" />
+                              <span>Bãi đỗ xe</span>
+                            </div>
+                          )}
+
+                          {amenities.hasAirConditioner && (
+                            <div className="flex items-center gap-1 px-2 py-0.5 bg-purple-50 text-purple-600 rounded-md text-xs font-medium">
+                              <FaSnowflake className="text-xs" />
+                              <span>Điều hòa</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100 text-xs text-gray-500">
+                          <div className="flex items-center gap-1">
+                            <FaEye className="text-gray-400 text-xs" />
+                            <span>{views || 0} lượt xem</span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <FaClock className="text-gray-400 text-xs" />
+                            <span>
+                              {new Date(createdAt).toLocaleDateString("vi-VN")}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Pagination */}
+            {paginatedListings.length > 0 && (
+              <div className="flex justify-center gap-2 mt-6">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    currentPage === 1
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  Trang trước
+                </button>
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    currentPage === totalPages || totalPages === 0
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  Trang sau
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="lg:w-1/3 space-y-4">
+            {/* Total Rooms Stats */}
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+              <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
+                <div className="flex items-center gap-1.5">
+                  <FaListAlt className="text-blue-600 text-xs" />
+                  <h3 className="text-sm font-bold text-gray-800">
+                    Thống kê phòng trọ
+                  </h3>
+                </div>
+              </div>
+
+              <div className="p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-600">Tổng số phòng:</span>
+                  <span className="text-sm font-bold text-blue-600">
+                    {totalRooms} phòng
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-600">Phòng đơn:</span>
+                  <span className="text-sm font-bold text-green-600">
+                    {listings.filter((l) => l.roomType === "Single").length}{" "}
+                    phòng
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-600">Phòng đôi:</span>
+                  <span className="text-sm font-bold text-purple-600">
+                    {listings.filter((l) => l.roomType === "Double").length}{" "}
+                    phòng
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Popular Areas */}
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+              <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
+                <div className="flex items-center gap-1.5">
+                  <FaMapMarkerAlt className="text-amber-600 text-xs" />
+                  <h3 className="text-sm font-bold text-gray-800">
+                    Khu vực phổ biến
+                  </h3>
+                </div>
+              </div>
+
+              <div className="p-3">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "Quận 1",
+                    "Quận 2",
+                    "Quận 3",
+                    "Quận 7",
+                    "Quận Bình Thạnh",
+                    "Quận Cầu Giấy",
+                    "Quận Thủ Đức",
+                  ].map((district) => (
+                    <button
+                      key={district}
+                      onClick={() => handleDistrictSelect(district)}
+                      className="px-3 py-1.5 bg-gray-100 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors"
+                    >
+                      {district}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Price Range Filter */}
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+              <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
+                <div className="flex items-center gap-1.5">
+                  <FaFilter className="text-red-600 text-xs" />
+                  <h3 className="text-sm font-bold text-gray-800">
+                    Xem theo khoảng giá
+                  </h3>
+                </div>
+              </div>
+
+              <div className="p-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => fetchListingsByPriceRange(0, 1000000)}
+                    className="text-left flex items-center gap-1 text-xs font-medium text-gray-700 hover:text-red-600 transition-colors"
+                  >
+                    <span className="text-red-500">›</span> Dưới 1 triệu
+                  </button>
+                  <button
+                    onClick={() => fetchListingsByPriceRange(1000000, 2000000)}
+                    className="text-left flex items-center gap-1 text-xs font-medium text-gray-700 hover:text-red-600 transition-colors"
+                  >
+                    <span className="text-red-500">›</span> Từ 1 - 2 triệu
+                  </button>
+                  <button
+                    onClick={() => fetchListingsByPriceRange(2000000, 3000000)}
+                    className="text-left flex items-center gap-1 text-xs font-medium text-gray-700 hover:text-red-600 transition-colors"
+                  >
+                    <span className="text-red-500">›</span> Từ 2 - 3 triệu
+                  </button>
+                  <button
+                    onClick={() => fetchListingsByPriceRange(3000000, 5000000)}
+                    className="text-left flex items-center gap-1 text-xs font-medium text-gray-700 hover:text-red-600 transition-colors"
+                  >
+                    <span className="text-red-500">›</span> Từ 3 - 5 triệu
+                  </button>
+                  <button
+                    onClick={() => fetchListingsByPriceRange(5000000, 7000000)}
+                    className="text-left flex items-center gap-1 text-xs font-medium text-gray-700 hover:text-red-600 transition-colors"
+                  >
+                    <span className="text-red-500">›</span> Từ 5 - 7 triệu
+                  </button>
+                  <button
+                    onClick={() => fetchListingsByPriceRange(7000000, 10000000)}
+                    className="text-left flex items-center gap-1 text-xs font-medium text-gray-700 hover:text-red-600 transition-colors"
+                  >
+                    <span className="text-red-500">›</span> Từ 7 - 10 triệu
+                  </button>
+                  <button
+                    onClick={() =>
+                      fetchListingsByPriceRange(10000000, 15000000)
+                    }
+                    className="text-left flex items-center gap-1 text-xs font-medium text-gray-700 hover:text-red-600 transition-colors"
+                  >
+                    <span className="text-red-500">›</span> Từ 10 - 15 triệu
+                  </button>
+                  <button
+                    onClick={() =>
+                      fetchListingsByPriceRange(15000000, 1000000000)
+                    }
+                    className="text-left flex items-center gap-1 text-xs font-medium text-gray-700 hover:text-red-600 transition-colors"
+                  >
+                    <span className="text-red-500">›</span> Trên 15 triệu
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Listings */}
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+              <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
+                <div className="flex items-center gap-1.5">
+                  <FaClock className="text-amber-600 text-xs" />
+                  <h3 className="text-sm font-bold text-gray-800">
+                    Tin mới đăng
+                  </h3>
+                </div>
+              </div>
+
+              <div className="divide-y divide-gray-100">
+                {recentListings.slice(0, 5).map((listing) => (
+                  <Link
+                    key={listing._id}
+                    to={`/listings/${listing._id}`}
+                    className="flex gap-2 p-2 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="w-16 h-12 flex-shrink-0 rounded-md overflow-hidden">
+                      <img
+                        src={
+                          listing.images[0]?.url ||
+                          "/placeholder.svg?height=64&width=80" ||
+                          "/placeholder.svg"
+                        }
+                        alt={listing.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-gray-800 text-xs mb-0.5 truncate">
+                        {listing.title}
+                      </h4>
+                      <div className="text-red-600 font-bold text-xs mb-0.5">
+                        {listing.price.toLocaleString()} VND/tháng
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span className="flex items-center gap-0.5 text-[10px]">
+                          <FaClock className="text-amber-500 text-[10px]" />
+                          {new Date(listing.createdAt).toLocaleDateString(
+                            "vi-VN"
+                          )}
+                        </span>
+                        <span className="flex items-center gap-0.5 text-[10px]">
+                          <FaEye className="text-gray-400 text-[10px]" />
+                          {listing.views || 0}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Blog Posts */}
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+              <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
+                <div className="flex items-center gap-1.5">
+                  <FaListAlt className="text-green-600 text-sm" />
+                  <h3 className="text-base font-bold text-gray-800">
+                    Bài viết mới
+                  </h3>
+                </div>
+              </div>
+
+              <div className="p-4">
+                <div className="grid gap-3">
+                  {blogs.slice(0, 6).map((blog, index) => (
+                    <Link
+                      key={blog._id || index}
+                      to={`/blog/${blog._id || index}`}
+                      className="text-left flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+                    >
+                      <span className="text-red-500 text-base">›</span>{" "}
+                      {blog.title}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Section */}
+      <div className="mt-12 p-8 bg-gray-50 rounded-lg border border-gray-200">
+        <h2 className="text-xl md:text-2xl font-bold text-center text-gray-800 mb-6">
+          CHO THUÊ PHÒNG TRỌ, NHÀ TRỌ TẠI RENT-HOUSE.COM
+        </h2>
+
+        <div className="space-y-4">
+          <p className="text-gray-700 text-sm md:text-base">
+            Khi có nhu cầu{" "}
+            <span className="font-semibold text-blue-600">thuê phòng trọ</span>,
+            chắc hẳn bạn sẽ băn khoăn với hàng loạt câu hỏi như: "
+            <i>
+              Không biết bắt đầu từ đâu? Sợ bị mất cọc oan vì những phòng trọ
+              "dỏm"? Tìm mãi những không ra phòng ưng ý?...
+            </i>
+            "
+          </p>
+
+          <p className="text-gray-700 text-sm md:text-base">
+            Đừng quá lo lắng, vì{" "}
+            <span className="font-semibold text-blue-600">Phongtro123.com</span>{" "}
+            chính là giải pháp tối ưu dành cho những vấn đề đó. Nơi bạn có thể{" "}
+            <span className="font-semibold text-blue-600">tìm phòng trọ</span>{" "}
+            mà không cần lận lội khắp nơi, chỉ cần vài cú nhấp chuột là tìm thấy
+            ngay một nơi ở tiềm năng.
+          </p>
+        </div>
+
+        {/* Expandable Content */}
+        <div
+          className={`mt-4 pt-4 border-t border-gray-200 ${
+            !footerExpanded ? "hidden" : ""
+          }`}
+        >
+          <div className="space-y-4">
+            <p className="text-gray-700 font-semibold text-sm md:text-base">
+              Giới thiệu về Rent-house.com
+            </p>
+
+            <p className="text-gray-700 text-sm md:text-base">
+              <span className="font-semibold text-blue-600">
+                Rent-house.com là kênh thông tin Phòng trọ số 1 Việt Nam
+              </span>
+              , một nền tảng chuyên biệt về cho thuê phòng trọ, nhà trọ lớn nhất
+              hiện nay. Được ra đời năm 2015 với 10 năm không ngừng phát triển,
+              Rent-house.com xây dựng cho mình hơn{" "}
+              <span className="font-semibold text-blue-600">
+                71.108 tin đăng
+              </span>{" "}
+              riêng về phòng trọ và trên{" "}
+              <span className="font-semibold text-blue-600">
+                200.000 tin đăng
+              </span>{" "}
+              ở tất cả chuyên mục. Tổng lượng user đăng ký tại website là{" "}
+              <span className="font-semibold text-blue-600">130.000+</span>{" "}
+              người trong đó có cả chính chủ và môi giới, cùng với hơn{" "}
+              <span className="font-semibold text-blue-600">
+                3 triệu lượt truy cập mỗi tháng
+              </span>
+              . Xứng đáng là cầu nối tốt nhất giữa người thuê và người cho thuê,
+              giúp tiết kiệm tối đa thời gian, công sức, và tiền bạc của cả 2
+              bên.
+            </p>
+
+            <p className="text-gray-700 text-sm md:text-base">
+              Với Rent-house.com, việc tìm phòng trọ trở nên dễ dàng hơn bao giờ
+              hết. Bạn có thể tìm kiếm theo khu vực, mức giá, tiện ích và nhiều
+              tiêu chí khác để tìm được phòng trọ phù hợp nhất với nhu cầu của
+              mình.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => setFooterExpanded(!footerExpanded)}
+          className="mt-4 mx-auto block px-6 py-2 bg-gray-100 hover:bg-gray-200 text-blue-600 font-medium rounded-md transition-colors"
+        >
+          {footerExpanded ? "Thu gọn" : "Xem thêm"}
+        </button>
+      </div>
+      {/* Customer Support Section */}
+      <div className="max-w-6xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+          <div className="flex flex-col md:flex-row items-center">
+            <div className="md:w-1/2 p-6">
+              <img
+                src="/assets/customer_service.jpg"
+                alt="Customer support representative"
+                className="w-full h-auto object-contain"
+              />
+            </div>
+            <div className="md:w-1/2 p-8 flex flex-col justify-center">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                Hỗ trợ chủ nhà đăng tin
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Nếu bạn cần hỗ trợ đăng tin, vui lòng liên hệ số điện thoại bên
+                dưới:
+              </p>
+
+              <div className="space-y-4">
+                <a
+                  href="tel:0909316890"
+                  className="flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded-md transition-colors font-medium"
+                >
+                  <FaPhone className="h-5 w-5" />
+                  ĐT: 0364745239
+                </a>
+
+                <a
+                  href="https://zalo.me/0364745239"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-md transition-colors font-medium"
+                >
+                  <FaCommentDots className="h-5 w-5" />
+                  Zalo: 0364745239
+                </a>
+
+                <p className="text-gray-600 mt-6 mb-3 text-center">
+                  Hỗ trợ ngoài giờ
+                </p>
+
+                <a
+                  href="https://zalo.me/renthouse"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-md transition-colors font-medium"
+                >
+                  <FaCommentDots className="h-5 w-5" />
+                  Zalo: renthouse
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
