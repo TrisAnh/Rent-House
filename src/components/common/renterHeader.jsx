@@ -326,6 +326,23 @@ const RenterHeader = () => {
               <span>Nhắn tin</span>
             </div>
             {/* Post Button */}
+                        <Link to="/package" style={styles.packageButton}>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{...styles.actionIcon, marginRight: '6px'}}
+              >
+                <path d="M20.91 8.84L8.56 2.23a1.93 1.93 0 0 0-1.81 0L3.1 4.13a2.12 2.12 0 0 0-.05 3.69l12.22 6.93a2 2 0 0 0 1.94 0L21 12.51a2.12 2.12 0 0 0-.09-3.67z"></path>
+                <path d="M3.09 8.84v7.2a2.06 2.06 0 0 0 1.3 1.87l10.82 4.07a2.19 2.19 0 0 0 1.8-.01l4.91-2a1.99 1.99 0 0 0 1.1-1.83V12"></path>
+                <path d="M12 16l-8.97-5.67"></path>
+              </svg>
+              <span>Mua gói đăng bài</span>
+            </Link>
             <Link to="/create-post" style={styles.postButton}>
               Đăng tin
             </Link>
@@ -341,6 +358,18 @@ const styles = {
     width: "100%",
     backgroundColor: "#0056b3",
   },
+  packageButton: {
+  display: 'flex',
+  alignItems: 'center',
+  backgroundColor: '#38a169', 
+  color: 'white',
+  textDecoration: 'none',
+  padding: '7px 14px',
+  borderRadius: '4px',
+  fontSize: '14px',
+  fontWeight: '500',
+  marginLeft: '4px',
+},
   header: {
     backgroundColor: "#0056b3",
     color: "white",
