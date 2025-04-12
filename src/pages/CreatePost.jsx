@@ -181,7 +181,7 @@ const CreatePost = () => {
 
       // Use fetch instead of axios for better multipart/form-data handling
       const response = await fetch(
-        "https://be-android-project.onrender.com/api/post/create",
+        "http://localhost:5000/api/post/create",
         {
           method: "POST",
           headers: {

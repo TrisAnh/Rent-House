@@ -72,7 +72,7 @@ const PaymentPage = () => {
   const [profile, setProfile] = useState(null);
   const location = useLocation();
   const { amount, listingId } = location.state || {
-    amount: 0,
+    amount: 2000,
     listingId: null,
   };
 

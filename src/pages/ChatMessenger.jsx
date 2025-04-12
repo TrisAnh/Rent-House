@@ -1,91 +1,147 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../hooks/useAuth";
-
-const MOCK_CONVERSATIONS = [
-  {
-    id: "1",
-    name: "Nguyễn Văn A",
-    lastMessage: "Xin chào, tôi quan tâm đến phòng trọ của bạn",
-    unread: 2,
-    avatar: null,
-  },
-  {
-    id: "2",
-    name: "Trần Thị B",
-    lastMessage: "Phòng còn trống không?",
-    unread: 0,
-    avatar: null,
-  },
-  {
-    id: "3",
-    name: "Lê Văn C",
-    lastMessage: "Cảm ơn bạn đã trả lời",
-    unread: 1,
-    avatar: null,
-  },
-];
-
-const MOCK_MESSAGES = {
-  1: [
-    {
-      id: "m1",
-      text: "Xin chào, tôi quan tâm đến phòng trọ của bạn",
-      sender: "them",
-      timestamp: new Date(Date.now() - 3600000),
-    },
-    {
-      id: "m2",
-      text: "Phòng có sẵn để xem không?",
-      sender: "them",
-      timestamp: new Date(Date.now() - 3500000),
-    },
-    {
-      id: "m3",
-      text: "Vâng, bạn có thể đến xem vào ngày mai",
-      sender: "me",
-      timestamp: new Date(Date.now() - 3400000),
-    },
-  ],
-  2: [
-    {
-      id: "m1",
-      text: "Phòng còn trống không?",
-      sender: "them",
-      timestamp: new Date(Date.now() - 86400000),
-    },
-  ],
-  3: [
-    {
-      id: "m1",
-      text: "Tôi muốn hỏi về giá cả",
-      sender: "them",
-      timestamp: new Date(Date.now() - 172800000),
-    },
-    {
-      id: "m2",
-      text: "Giá phòng là 3 triệu/tháng, đã bao gồm điện nước",
-      sender: "me",
-      timestamp: new Date(Date.now() - 172700000),
-    },
-    {
-      id: "m3",
-      text: "Cảm ơn bạn đã trả lời",
-      sender: "them",
-      timestamp: new Date(Date.now() - 172600000),
-    },
-  ],
-};
+import axios from "axios";
+import { io } from "socket.io-client";
 
 const ChatMessenger = () => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [conversations, setConversations] = useState(MOCK_CONVERSATIONS);
+  const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const [socket, setSocket] = useState(null);
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
+
+  // Kết nối Socket.io khi component mount
+  useEffect(() => {
+    const newSocket = io("http://localhost:5000", {
+      withCredentials: true,
+      transports: ["websocket"],
+    });
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
+
+  // Xác thực người dùng với Socket.io
+  useEffect(() => {
+    if (socket && user) {
+      socket.emit("authenticate", user.id);
+    }
+  }, [socket, user]);
+
+  // Lấy danh sách đoạn chat
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/api/chat/user/${user.id}`);
+        setConversations(response.data);
+      } catch (error) {
+        console.error("Error fetching conversations:", error);
+      }
+    };
+
+    if (user && isOpen) fetchConversations();
+  }, [user, isOpen]);
+
+  // Lấy tin nhắn và thiết lập real-time khi chọn đoạn chat
+  useEffect(() => {
+    if (!socket || !activeConversation) return;
+
+    const fetchMessages = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/api/messages/chat/${activeConversation._id}`,
+          { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+        );
+        setMessages(response.data.messages);
+        scrollToBottom();
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
+    };
+
+    fetchMessages();
+
+    // Tham gia phòng chat
+    socket.emit("joinChat", activeConversation._id);
+
+    // Lắng nghe tin nhắn mới
+    socket.on("receiveMessage", (message) => {
+      setMessages((prev) => [...prev, message]);
+      scrollToBottom();
+    });
+
+    return () => {
+      socket.off("receiveMessage");
+    };
+  }, [socket, activeConversation]);
+
+  // Gửi tin nhắn
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !activeConversation || !socket) return;
+
+    const tempMessage = {
+      _id: `temp-${Date.now()}`,
+      chatId: activeConversation._id,
+      sender: user,
+      content: newMessage,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Optimistic update
+    setMessages((prev) => [...prev, tempMessage]);
+    setNewMessage("");
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/messages/create",
+        {
+          chatId: activeConversation._id,
+          content: newMessage,
+          receiverId: getOtherMember(activeConversation)?._id,
+        },
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+      );
+
+      // Gửi tin nhắn qua Socket.io
+      socket.emit("sendMessage", {
+        chatId: activeConversation._id,
+        message: response.data.message,
+      });
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setMessages((prev) => prev.filter((msg) => msg._id !== tempMessage._id));
+    }
+  };
+
+  const getChatName = (chat) => {
+    if (!chat?.members || !user) return "Unknown User";
+    const otherMember = chat.members.find(member => member._id !== user.id);
+    return otherMember?.username || "Unknown User";
+  };
+
+  const getOtherMemberAvatar = (chat) => {
+    if (!chat?.members || !user) return null;
+
+    const otherMember = chat.members.find(member => member._id !== user.id);
+
+    return otherMember?.avatar?.url || null;
+  };
+
+  const getOtherMember = (chat) => {
+    if (!chat?.members || !user) return null;
+    return chat.members.find((member) => member._id !== user.id);
+  };
+
+  const getSenderAvatar = (message) => {
+    return message.sender?.avatar?.url || null;
+  };
 
   useEffect(() => {
     const handleToggleChat = () => {
@@ -97,12 +153,6 @@ const ChatMessenger = () => {
   }, []);
 
   useEffect(() => {
-    if (activeConversation) {
-      setMessages(MOCK_MESSAGES[activeConversation.id] || []);
-    }
-  }, [activeConversation]);
-
-  useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
@@ -110,30 +160,9 @@ const ChatMessenger = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleSendMessage = () => {
-    if (newMessage.trim() === "" || !activeConversation) return;
-
-    const newMsg = {
-      id: `m${Date.now()}`,
-      text: newMessage,
-      sender: "me",
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, newMsg]);
-
-    setConversations((prev) =>
-      prev.map((conv) =>
-        conv.id === activeConversation.id
-          ? { ...conv, lastMessage: newMessage, unread: 0 }
-          : conv
-      )
-    );
-
-    setNewMessage("");
-  };
-
-  const formatTime = (date) => {
+  const formatTime = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
@@ -149,7 +178,7 @@ const ChatMessenger = () => {
       {/* Chat Header */}
       <div style={styles.chatHeader}>
         <div style={styles.chatHeaderTitle}>
-          {activeConversation ? activeConversation.name : "Tin nhắn"}
+          {activeConversation ? getChatName(activeConversation) : "Tin nhắn"}
         </div>
         <div style={styles.chatHeaderActions}>
           {activeConversation && (
@@ -180,25 +209,38 @@ const ChatMessenger = () => {
             <div style={styles.conversationsList}>
               {conversations.map((conversation) => (
                 <div
-                  key={conversation.id}
+                  key={conversation._id}
                   style={{
                     ...styles.conversationItem,
                     backgroundColor:
-                      activeConversation?.id === conversation.id
+                      activeConversation?._id === conversation._id
                         ? "#e6f2ff"
                         : "transparent",
                   }}
                   onClick={() => setActiveConversation(conversation)}
                 >
                   <div style={styles.avatar}>
-                    <span>{conversation.name.charAt(0)}</span>
+                    {getOtherMemberAvatar(conversation) ? (
+                      <img
+                        src={getOtherMemberAvatar(conversation)}
+                        alt="avatar"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: '50%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    ) : (
+                      <span>{getChatName(conversation)?.charAt(0) || 'U'}</span>
+                    )}
                   </div>
                   <div style={styles.conversationInfo}>
                     <div style={styles.conversationName}>
-                      {conversation.name}
+                      {getChatName(conversation)}
                     </div>
                     <div style={styles.conversationLastMessage}>
-                      {conversation.lastMessage}
+                      {conversation.lastMessage.content}
                     </div>
                   </div>
                   {conversation.unread > 0 && (
@@ -211,29 +253,45 @@ const ChatMessenger = () => {
             </div>
           ) : (
             // Messages View
+            // Messages View
+            // Messages View
             <div style={styles.messagesContainer}>
               <div style={styles.messagesList}>
                 {messages.map((message) => (
                   <div
-                    key={message.id}
+                    key={message._id}
                     style={{
                       ...styles.messageContainer,
-                      alignSelf:
-                        message.sender === "me" ? "flex-end" : "flex-start",
+                      flexDirection: message.sender._id === user.id ? "row-reverse" : "row",
+                      alignSelf: message.sender._id === user.id ? "flex-end" : "flex-start",
                     }}
                   >
+                    {/* Avatar (chỉ hiển thị với tin nhắn từ người khác) */}
+                    {message.sender._id !== user.id && (
+                      <div style={styles.smallAvatar}>
+                        {message.sender.avatar?.url ? (
+                          <img
+                            src={message.sender.avatar.url}
+                            alt="avatar"
+                            style={styles.avatarImage}
+                          />
+                        ) : (
+                          <span>{message.sender.username?.charAt(0) || 'U'}</span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Nội dung tin nhắn */}
                     <div
                       style={{
                         ...styles.messageBubble,
-                        ...(message.sender === "me"
-                          ? styles.myBubble
-                          : styles.theirBubble),
+                        ...(message.sender._id === user.id ? styles.myBubble : styles.theirBubble),
                       }}
                     >
-                      {message.text}
-                    </div>
-                    <div style={styles.messageTime}>
-                      {formatTime(message.timestamp)}
+                      {message.content}
+                      <div style={styles.messageTime}>
+                        {formatTime(message.createdAt)}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -272,8 +330,9 @@ const ChatMessenger = () => {
             </div>
           )}
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 };
 
@@ -354,6 +413,7 @@ const styles = {
     color: "white",
     fontWeight: "bold",
     marginRight: "10px",
+    overflow: "hidden",
   },
   conversationInfo: {
     flex: 1,
@@ -400,8 +460,45 @@ const styles = {
     marginBottom: "10px",
     maxWidth: "80%",
     display: "flex",
-    flexDirection: "column",
+    alignItems: "flex-end", // Căn avatar và tin nhắn dưới cùng
+    gap: "8px",
   },
+  smallAvatar: {
+    width: "28px", // Nhỏ hơn avatar trong danh sách chat
+    height: "28px",
+    borderRadius: "50%",
+    backgroundColor: "#e5e5e5",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#333",
+    fontWeight: "bold",
+    fontSize: "12px",
+    flexShrink: 0, // Không bị co lại khi thiếu space
+    overflow: "hidden",
+  },
+
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
+
+  messageBubble: {
+    padding: "10px",
+    borderRadius: "16px",
+    maxWidth: "calc(100% - 36px)", // Trừ đi kích thước avatar
+    wordWrap: "break-word",
+    position: "relative", // Để thời gian có thể absolute
+  },
+
+  messageTime: {
+    fontSize: "10px",
+    color: "#999",
+    marginTop: "4px",
+    textAlign: "right",
+  },
+
   messageBubble: {
     padding: "10px",
     borderRadius: "16px",
