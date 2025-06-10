@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { styled } from "@mui/system";
 import { motion } from "framer-motion";
-import { IoHomeOutline, IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
+import { IoHomeOutline, IoCheckmarkCircle, IoCloseCircle, IoWarning } from "react-icons/io5";
 import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 
@@ -34,7 +34,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
 }));
 
 const PaymentDetailsBox = styled(Box)(({ theme }) => ({
-  backgroundColor: theme.palette.grey[100],
+  backgroundColor: "#f5f5f5",
   borderRadius: theme.shape.borderRadius,
   padding: theme.spacing(3),
   marginTop: theme.spacing(3),
@@ -47,46 +47,76 @@ const ThankYouPage = () => {
   const [searchParams] = useSearchParams();
   const [paymentStatus, setPaymentStatus] = useState("processing");
   const [paymentData, setPaymentData] = useState(null);
+  const [packageData, setPackageData] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const verifyPayment = async () => {
+    const processPaymentResult = async () => {
       try {
-        const vnp_ResponseCode = searchParams.get("vnp_ResponseCode");
-        const vnp_TxnRef = searchParams.get("vnp_TxnRef");
+        // Lấy status và message từ URL parameters (được set từ backend callback)
+        const status = searchParams.get("status");
+        const message = searchParams.get("message");
         
-        if (!vnp_TxnRef) {
-          setPaymentStatus("invalid");
-          return;
-        }
+        console.log("Payment result from URL:", { status, message });
 
-        // Gọi API xác minh thanh toán với orderId (vnp_TxnRef)
-        const response = await axios.get(`http://localhost:5000/api/packages/verify-payment/${vnp_TxnRef}`);
-        
-        if (response.data.status === "completed") {
+        if (status === "success") {
           setPaymentStatus("success");
-          setPaymentData({
-            amount: response.data.amount,
-            package: response.data.package,
-            transactionId: vnp_TxnRef,
+          
+          // Lấy thông tin gói hiện tại của user sau khi thanh toán thành công
+          try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+              throw new Error("No authentication token found");
+            }
+
+            const response = await axios.get(
+              "http://localhost:5000/api/packages/current",
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+
+            if (response.data && response.data.hasActivePackage) {
+              setPackageData(response.data);
+            }
+          } catch (packageError) {
+            console.error("Error fetching package info:", packageError);
+            // Không set error vì payment đã thành công, chỉ không lấy được thông tin gói
+          }
+
+          // Lấy thông tin từ VNPay parameters nếu có
+          const paymentInfo = {
+            transactionId: searchParams.get("vnp_TxnRef"),
             bankCode: searchParams.get("vnp_BankCode"),
             paymentDate: searchParams.get("vnp_PayDate"),
-          });
-        } else {
+            amount: searchParams.get("vnp_Amount"),
+            orderInfo: searchParams.get("vnp_OrderInfo"),
+          };
+
+          setPaymentData(paymentInfo);
+          
+        } else if (status === "failed" || status === "error") {
           setPaymentStatus("failed");
+          setError(message || "Payment failed");
+        } else {
+          // Nếu không có status parameter, có thể là truy cập trực tiếp
+          setPaymentStatus("invalid");
         }
       } catch (err) {
-        console.error("Payment verification error:", err);
-        setError("Failed to verify payment. Please check your purchase history.");
+        console.error("Error processing payment result:", err);
+        setError("Unable to process payment result");
         setPaymentStatus("error");
       }
     };
 
-    verifyPayment();
+    processPaymentResult();
   }, [searchParams]);
 
   const formatPaymentDate = (vnpPayDate) => {
     if (!vnpPayDate) return "N/A";
+    // Format: YYYYMMDDHHmmss
     const year = vnpPayDate.substring(0, 4);
     const month = vnpPayDate.substring(4, 6);
     const day = vnpPayDate.substring(6, 8);
@@ -98,18 +128,35 @@ const ThankYouPage = () => {
 
   const formatCurrency = (amount) => {
     if (!amount) return "N/A";
+    // VNPay amount is multiplied by 100
+    const actualAmount = parseInt(amount) / 100;
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
-    }).format(amount);
+    }).format(actualAmount);
+  };
+
+  const handleViewPackage = async () => {
+    // Refresh package info before redirecting
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        await axios.get("http://localhost:5000/api/packages/current", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+    } catch (error) {
+      console.error("Error refreshing package info:", error);
+    }
+    window.location.href = "/user/packages";
   };
 
   if (paymentStatus === "processing") {
     return (
       <StyledContainer>
         <CircularProgress size={60} thickness={4} />
-        <Typography variant="h6" color="text.secondary">
-          Verifying your payment...
+        <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
+          Processing payment result...
         </Typography>
       </StyledContainer>
     );
@@ -118,9 +165,15 @@ const ThankYouPage = () => {
   if (paymentStatus === "invalid") {
     return (
       <StyledContainer>
-        <Alert severity="error" sx={{ mb: 3 }}>
-          Invalid payment confirmation page
-        </Alert>
+        <Box sx={{ color: "warning.main", fontSize: "4rem", mb: 2 }}>
+          <IoWarning />
+        </Box>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Invalid Access
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          This page can only be accessed after a payment transaction.
+        </Typography>
         <StyledButton
           variant="contained"
           color="primary"
@@ -133,20 +186,29 @@ const ThankYouPage = () => {
     );
   }
 
-  if (error) {
+  if (error && paymentStatus === "error") {
     return (
       <StyledContainer>
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert severity="error" sx={{ mb: 3, maxWidth: 500 }}>
           {error}
         </Alert>
-        <StyledButton
-          variant="contained"
-          color="primary"
-          startIcon={<IoHomeOutline />}
-          onClick={() => (window.location.href = "/")}
-        >
-          Return Home
-        </StyledButton>
+        <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
+          <StyledButton
+            variant="contained"
+            color="primary"
+            onClick={() => (window.location.href = "/packages")}
+          >
+            Try Again
+          </StyledButton>
+          <StyledButton
+            variant="outlined"
+            color="primary"
+            startIcon={<IoHomeOutline />}
+            onClick={() => (window.location.href = "/")}
+          >
+            Return Home
+          </StyledButton>
+        </Box>
       </StyledContainer>
     );
   }
@@ -166,39 +228,64 @@ const ThankYouPage = () => {
             <Typography variant="h3" component="h1" gutterBottom>
               Payment Successful!
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              Thank you for your purchase. Your package has been activated.
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+              Thank you for your purchase. Your package has been activated successfully.
             </Typography>
 
-            <PaymentDetailsBox>
-              <Typography variant="h6" gutterBottom>
-                Payment Details
-              </Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                <Typography>
-                  <strong>Transaction ID:</strong> {paymentData?.transactionId || "N/A"}
+            {/* Package Information */}
+            {packageData && packageData.hasActivePackage && (
+              <Alert severity="success" sx={{ mb: 3, maxWidth: 500 }}>
+                <Typography variant="subtitle1" fontWeight="bold">
+                  Package Activated: {packageData.package?.name}
                 </Typography>
-                <Typography>
-                  <strong>Package:</strong> {paymentData?.package?.name || "N/A"}
+                <Typography variant="body2">
+                  Posts remaining: {packageData.postsLeft} | 
+                  Expires: {new Date(packageData.expiresAt).toLocaleDateString('vi-VN')}
                 </Typography>
-                <Typography>
-                  <strong>Amount:</strong> {formatCurrency(paymentData?.amount)}
+              </Alert>
+            )}
+
+            {/* Payment Details */}
+            {paymentData && (
+              <PaymentDetailsBox>
+                <Typography variant="h6" gutterBottom>
+                  Payment Details
                 </Typography>
-                <Typography>
-                  <strong>Payment Method:</strong>{" "}
-                  {paymentData?.bankCode ? `VNPay (${paymentData.bankCode})` : "N/A"}
-                </Typography>
-                <Typography>
-                  <strong>Date:</strong> {formatPaymentDate(paymentData?.paymentDate)}
-                </Typography>
-              </Box>
-            </PaymentDetailsBox>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  {paymentData.transactionId && (
+                    <Typography>
+                      <strong>Transaction ID:</strong> {paymentData.transactionId}
+                    </Typography>
+                  )}
+                  {paymentData.orderInfo && (
+                    <Typography>
+                      <strong>Package:</strong> {decodeURIComponent(paymentData.orderInfo)}
+                    </Typography>
+                  )}
+                  {paymentData.amount && (
+                    <Typography>
+                      <strong>Amount:</strong> {formatCurrency(paymentData.amount)}
+                    </Typography>
+                  )}
+                  {paymentData.bankCode && (
+                    <Typography>
+                      <strong>Payment Method:</strong> VNPay ({paymentData.bankCode})
+                    </Typography>
+                  )}
+                  {paymentData.paymentDate && (
+                    <Typography>
+                      <strong>Date:</strong> {formatPaymentDate(paymentData.paymentDate)}
+                    </Typography>
+                  )}
+                </Box>
+              </PaymentDetailsBox>
+            )}
 
             <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
               <StyledButton
                 variant="contained"
                 color="primary"
-                onClick={() => (window.location.href = "/user/packages")}
+                onClick={handleViewPackage}
               >
                 View Your Package
               </StyledButton>
@@ -220,9 +307,16 @@ const ThankYouPage = () => {
             <Typography variant="h3" component="h1" gutterBottom>
               Payment Failed
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              We couldn't process your payment. Please try again or contact support.
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+              {error || "We couldn't process your payment. Please try again or contact support."}
             </Typography>
+
+            <Alert severity="error" sx={{ mb: 3, maxWidth: 500 }}>
+              <Typography variant="body2">
+                If money was deducted from your account, it will be refunded within 1-3 business days.
+                Please contact support if you need assistance.
+              </Typography>
+            </Alert>
 
             <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
               <StyledButton

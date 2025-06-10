@@ -1,4 +1,3 @@
-// src/api/comments.js
 import axiosInstance from "./axiosInstance";
 export const getCommentByPostId = (postId) => {
   return axiosInstance.get(`/comment/post/${postId}`);

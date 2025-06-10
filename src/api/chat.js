@@ -1,4 +1,3 @@
-// src/api/auth.js
 import axiosInstance from "./axiosInstance";
 
 export const createChat = (data) => {

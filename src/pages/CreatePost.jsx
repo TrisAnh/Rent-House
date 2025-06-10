@@ -1,7 +1,8 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   Container,
   PageWrapper,
@@ -63,6 +64,15 @@ const CreatePost = () => {
   const [videos, setVideos] = useState([]);
   const [landlordId, setLandlordId] = useState(null);
   const [error, setError] = useState("");
+  const [showWarnings, setShowWarnings] = useState(false);
+  const [apiWarnings, setApiWarnings] = useState([]);
+  const [priceEvaluation, setPriceEvaluation] = useState(null);
+  const [duplicateImages, setDuplicateImages] = useState([]);
+  const [pendingPostData, setPendingPostData] = useState(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingWarnings, setPendingWarnings] = useState([]);
+  const [pendingPriceEvaluation, setPendingPriceEvaluation] = useState(null);
+  const [pendingDuplicateImages, setPendingDuplicateImages] = useState([]);
 
   useEffect(() => {
     fetchUserProfile();
@@ -140,8 +150,8 @@ const CreatePost = () => {
       // Add basic fields
       formDataToSend.append("title", formData.title);
       formDataToSend.append("description", formData.description);
-      formDataToSend.append("price", formData.price);
-      formDataToSend.append("size", formData.area);
+      formDataToSend.append("price", parseInt(formData.price));
+      formDataToSend.append("size", parseInt(formData.area));
       formDataToSend.append("roomType", formData.roomType);
       formDataToSend.append("availability", formData.availability);
       formDataToSend.append("landlord", landlordId);
@@ -177,65 +187,323 @@ const CreatePost = () => {
         formDataToSend.append("videos", video);
       });
 
-      console.log("Sending data to API...");
+      // Thêm flag để check warnings trước
+      formDataToSend.append("checkOnly", "true");
 
-      // Use fetch instead of axios for better multipart/form-data handling
+      console.log("Checking for warnings...");
+      const token = localStorage.getItem("token");
+
       const response = await fetch(
         "http://localhost:5000/api/post/create",
         {
           method: "POST",
           headers: {
             Accept: "application/json",
-            // Don't set Content-Type header - let the browser set it with the boundary
+            Authorization: `Bearer ${token}`,
           },
           body: formDataToSend,
+        }
+      );
+
+      console.log("Response status:", response.status);
+
+      const responseData = await response.json();
+
+      if (response.ok) {
+        // Nếu có warnings, hiển thị dialog xác nhận
+        if (responseData.warnings && responseData.warnings.length > 0) {
+          setPendingWarnings(responseData.warnings);
+          setPendingPriceEvaluation(responseData.priceEvaluation);
+          setPendingDuplicateImages(responseData.imageCheck?.duplicateDetails || []);
+
+          // Tạo FormData mới không có checkOnly flag
+          const finalFormData = new FormData();
+          for (let [key, value] of formDataToSend.entries()) {
+            if (key !== 'checkOnly') {
+              finalFormData.append(key, value);
+            }
+          }
+          setPendingPostData(finalFormData);
+          setShowConfirmDialog(true);
+        } else {
+          // Không có warnings, đăng bài thành công
+          toast.success("Tạo bài viết thành công!");
+          resetForm();
+        }
+      } else {
+        console.error("API error:", responseData);
+        setError(`Lỗi: ${responseData.message || "Không thể tạo bài đăng"}`);
+        toast.error(`Lỗi: ${responseData.message || "Không thể tạo bài đăng"}`);
+      }
+    } catch (error) {
+      console.error("Lỗi khi gửi bài đăng:", error);
+      setError("Đã xảy ra lỗi khi đăng bài. Vui lòng thử lại sau.");
+      toast.error("Đã xảy ra lỗi khi đăng bài. Vui lòng thử lại sau.");
+    }
+  };
+
+  // Thêm sau hàm handleSubmit:
+
+  // Hàm xác nhận đăng bài với warnings
+  const confirmPostWithWarnings = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      // Thêm confirmWarnings flag
+      pendingPostData.append("confirmWarnings", "true");
+
+      const response = await fetch(
+        "http://localhost:5000/api/post/create",
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: pendingPostData,
         }
       );
 
       const responseData = await response.json();
 
       if (response.ok) {
-        alert("Tạo bài viết thành công!");
-        // Reset form
-        setFormData({
-          title: "",
-          description: "",
-          price: "",
-          address: "",
-          district: "",
-          ward: "",
-          city: "",
-          roomType: "Single",
-          area: "",
-          availability: true,
-          electricityCost: "",
-          waterCost: "",
-          internetCost: "",
-          cleaningCost: "",
-          securityCost: "",
-          amenities: {
-            hasWifi: false,
-            hasParking: false,
-            hasAirConditioner: false,
-            hasKitchen: false,
-            hasElevator: false,
-          },
-        });
-        setImages([]);
-        setVideos([]);
+        toast.success("Tạo bài viết thành công!");
+        setShowConfirmDialog(false);
+        setPendingWarnings([]);
+        setPendingPostData(null);
+        setPendingPriceEvaluation(null);
+        setPendingDuplicateImages([]);
+        resetForm();
       } else {
-        console.error("API error:", responseData);
         setError(`Lỗi: ${responseData.message || "Không thể tạo bài đăng"}`);
+        toast.error(`Lỗi: ${responseData.message || "Không thể tạo bài đăng"}`);
       }
     } catch (error) {
-      console.error("Lỗi khi gửi bài đăng:", error);
+      console.error("Lỗi khi xác nhận đăng bài:", error);
       setError("Đã xảy ra lỗi khi đăng bài. Vui lòng thử lại sau.");
+      toast.error("Đã xảy ra lỗi khi đăng bài. Vui lòng thử lại sau.");
     }
+  };
+
+  // Hàm hủy đăng bài
+  const cancelPost = () => {
+    setShowConfirmDialog(false);
+    setPendingWarnings([]);
+    setPendingPostData(null);
+    setPendingPriceEvaluation(null);
+    setPendingDuplicateImages([]);
+  };
+
+  // Cập nhật hàm resetForm
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      description: "",
+      price: "",
+      address: "",
+      district: "",
+      ward: "",
+      city: "",
+      roomType: "Single",
+      area: "",
+      availability: true,
+      electricityCost: "",
+      waterCost: "",
+      internetCost: "",
+      cleaningCost: "",
+      securityCost: "",
+      amenities: {
+        hasWifi: false,
+        hasParking: false,
+        hasAirConditioner: false,
+        hasKitchen: false,
+        hasElevator: false,
+      },
+    });
+    setImages([]);
+    setVideos([]);
+    setError("");
+    setShowWarnings(false);
+    setApiWarnings([]);
+    setPriceEvaluation(null);
+    setDuplicateImages([]);
   };
 
   return (
     <PageWrapper>
       <Container>
+        <ToastContainer />
+
+        {/* Dialog xác nhận warnings */}
+        {showConfirmDialog && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '30px',
+              borderRadius: '12px',
+              maxWidth: '600px',
+              width: '90%',
+              maxHeight: '80vh',
+              overflow: 'auto',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
+            }}>
+              <h3 style={{
+                color: '#f56565',
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                fontSize: '22px',
+                fontWeight: 'bold'
+              }}>
+                ⚠️ Phát hiện cảnh báo về bài đăng
+              </h3>
+
+              <p style={{ marginBottom: '20px', color: '#4a5568', fontSize: '16px' }}>
+                Hệ thống phát hiện một số vấn đề với bài đăng của bạn:
+              </p>
+
+              {/* Danh sách warnings */}
+              <div style={{
+                backgroundColor: '#fff5f5',
+                padding: '15px',
+                borderRadius: '8px',
+                marginBottom: '20px',
+                border: '1px solid #fed7d7'
+              }}>
+                <ul style={{
+                  margin: 0,
+                  paddingLeft: '20px',
+                  color: '#2d3748'
+                }}>
+                  {pendingWarnings.map((warning, index) => (
+                    <li key={index} style={{ marginBottom: '8px', fontSize: '15px' }}>
+                      {warning}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Thông tin đánh giá giá */}
+              {pendingPriceEvaluation && (
+                <div style={{
+                  backgroundColor: pendingPriceEvaluation.level === 'high' ? '#fef5e7' :
+                    pendingPriceEvaluation.level === 'low' ? '#e6fffa' : '#f0fff4',
+                  padding: '15px',
+                  borderRadius: '8px',
+                  marginBottom: '15px',
+                  border: `1px solid ${pendingPriceEvaluation.level === 'high' ? '#fbd38d' :
+                    pendingPriceEvaluation.level === 'low' ? '#81e6d9' : '#9ae6b4'}`
+                }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>💰 Chi tiết đánh giá giá:</h4>
+                  <p style={{ margin: '5px 0', fontSize: '14px' }}>
+                    <strong>Mức độ:</strong> {
+                      pendingPriceEvaluation.level === 'high' ? '🔴 Cao hơn thị trường' :
+                        pendingPriceEvaluation.level === 'low' ? '🔵 Thấp hơn thị trường' :
+                          '🟢 Phù hợp với thị trường'
+                    }
+                  </p>
+                  {pendingPriceEvaluation.predictedPrice && (
+                    <p style={{ margin: '5px 0', fontSize: '14px' }}>
+                      <strong>Giá dự đoán:</strong> {pendingPriceEvaluation.predictedPrice.toLocaleString()} VNĐ
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Thông tin ảnh trùng lặp */}
+              {pendingDuplicateImages.length > 0 && (
+                <div style={{
+                  backgroundColor: '#fff5f5',
+                  padding: '15px',
+                  borderRadius: '8px',
+                  marginBottom: '15px',
+                  border: '1px solid #fed7d7'
+                }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>🚨 Chi tiết ảnh trùng lặp:</h4>
+                  <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                    {pendingDuplicateImages.map((duplicate, index) => (
+                      <li key={index} style={{ marginBottom: '5px', fontSize: '14px' }}>
+                        Trùng với bài đăng ID: <strong>{duplicate.matchedPostId}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div style={{
+                backgroundColor: '#fff8e1',
+                padding: '15px',
+                borderRadius: '8px',
+                marginBottom: '25px',
+                border: '1px solid #ffecb3'
+              }}>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#e65100',
+                  margin: 0,
+                  fontWeight: '500'
+                }}>
+                  <strong>⚠️ Lưu ý quan trọng:</strong> Nếu bạn tiếp tục đăng bài, những cảnh báo này sẽ được hiển thị
+                  dưới dạng nhãn cảnh báo trên bài đăng để người thuê có thể nhận biết.
+                </p>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                gap: '15px',
+                justifyContent: 'flex-end'
+              }}>
+                <button
+                  onClick={cancelPost}
+                  style={{
+                    padding: '12px 24px',
+                    backgroundColor: '#e2e8f0',
+                    color: '#4a5568',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    fontWeight: '500',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#cbd5e0'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = '#e2e8f0'}
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  onClick={confirmPostWithWarnings}
+                  style={{
+                    padding: '12px 24px',
+                    backgroundColor: '#f56565',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    fontWeight: '500',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#e53e3e'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = '#f56565'}
+                >
+                  Vẫn đăng bài
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <FormCard onSubmit={handleSubmit}>
           <FormTitle>Đăng tin cho thuê</FormTitle>
 

@@ -38,6 +38,7 @@ import BookingDetailsUser from "../pages/InforBookingUser";
 // Import the ChatMessenger component
 import ChatMessenger from "../pages/ChatMessenger";
 import PostPackagePage from "../pages/PostPackagePage";
+import PostAlertSubscriptionForm from "../pages/CreateAlert";
 
 const AppRoutes = () => {
   const { user, user_role } = useAuth();
@@ -95,6 +96,7 @@ const AppRoutes = () => {
         <Route path="/blog/:id" element={<BlogDetail />} />
         <Route path="/inforbooking" element={<BookingDetailsUser />} />
         <Route path="/package" element={<PostPackagePage />} />
+        <Route path="/alert" element={<PostAlertSubscriptionForm />} />
       </Routes>
 
       {user && <ChatMessenger />}

@@ -25,6 +25,8 @@ import {
   getAllPosts,
 } from "../api/post";
 
+import GeminiChatBox from "./ChatBoxGemini";
+
 const Home = () => {
   const [featuredProperties, setFeaturedProperties] = useState([]);
   const [topViewedPosts, setTopViewedPosts] = useState([]);
@@ -350,7 +352,6 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      {/* Mobile Menu Button */}
       <div className="fixed top-4 right-4 z-50 md:hidden">
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

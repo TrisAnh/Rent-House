@@ -1,4 +1,3 @@
-// src/api/favourites.js
 import axiosInstance from "./axiosInstance";
 export const createFavourite = (id_user_rent, id_post) => {
   return axiosInstance.post("/favorite/create", {

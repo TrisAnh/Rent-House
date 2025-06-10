@@ -5,6 +5,8 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { MdKeyboardArrowDown } from "react-icons/md";
 import { getNotification } from "../../api/notifications";
+import PostAlertSubscriptionForm from "../../pages/CreateAlert";
+import { Button } from "@mui/material";
 
 const RenterHeader = () => {
   const { user, logout } = useAuth();
@@ -13,6 +15,7 @@ const RenterHeader = () => {
   const notificationRef = useRef(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -246,6 +249,22 @@ const RenterHeader = () => {
                       </svg>
                       <span>Thông tin cá nhân</span>
                     </Link>
+                    <Link to="/profile" style={styles.userMenuItem}>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={styles.menuItemIcon}
+                      >
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      <span>Gói đã mua</span>
+                    </Link>
                     <div style={styles.userMenuItem} onClick={logout}>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -305,28 +324,9 @@ const RenterHeader = () => {
                 </Link>
               </>
             )}
-            <div
-              style={styles.actionButton}
-              onClick={() => {
-                window.dispatchEvent(new Event("toggleChat"));
-              }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={styles.actionIcon}
-              >
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-              </svg>
-              <span>Nhắn tin</span>
-            </div>
+            
             {/* Post Button */}
-                        <Link to="/package" style={styles.packageButton}>
+            <Link to="/package" style={styles.packageButton}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -335,14 +335,41 @@ const RenterHeader = () => {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                style={{...styles.actionIcon, marginRight: '6px'}}
+                style={{ ...styles.actionIcon, marginRight: '6px' }}
               >
                 <path d="M20.91 8.84L8.56 2.23a1.93 1.93 0 0 0-1.81 0L3.1 4.13a2.12 2.12 0 0 0-.05 3.69l12.22 6.93a2 2 0 0 0 1.94 0L21 12.51a2.12 2.12 0 0 0-.09-3.67z"></path>
                 <path d="M3.09 8.84v7.2a2.06 2.06 0 0 0 1.3 1.87l10.82 4.07a2.19 2.19 0 0 0 1.8-.01l4.91-2a1.99 1.99 0 0 0 1.1-1.83V12"></path>
                 <path d="M12 16l-8.97-5.67"></path>
               </svg>
-              <span>Mua gói đăng bài</span>
+              <span>Mua gói </span>
             </Link>
+            <Button 
+  onClick={() => setOpen(true)} 
+  style={styles.packageButton}
+  startIcon={
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ ...styles.actionIcon, marginRight: '6px' }}
+    >
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+    </svg>
+  }
+>
+  Nhận tin
+</Button>
+
+{/* Thêm popup form */}
+<PostAlertSubscriptionForm 
+  open={open} 
+  onClose={() => setOpen(false)} 
+/>
             <Link to="/create-post" style={styles.postButton}>
               Đăng tin
             </Link>
@@ -359,17 +386,17 @@ const styles = {
     backgroundColor: "#0056b3",
   },
   packageButton: {
-  display: 'flex',
-  alignItems: 'center',
-  backgroundColor: '#38a169', 
-  color: 'white',
-  textDecoration: 'none',
-  padding: '7px 14px',
-  borderRadius: '4px',
-  fontSize: '14px',
-  fontWeight: '500',
-  marginLeft: '4px',
-},
+    display: 'flex',
+    alignItems: 'center',
+    backgroundColor: '#38a169',
+    color: 'white',
+    textDecoration: 'none',
+    padding: '7px 14px',
+    borderRadius: '4px',
+    fontSize: '14px',
+    fontWeight: '500',
+    marginLeft: '4px',
+  },
   header: {
     backgroundColor: "#0056b3",
     color: "white",

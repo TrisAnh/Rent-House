@@ -273,3 +273,146 @@ export const FormDivider = styled.hr`
   border-top: 1px solid #eee;
   margin: 30px 0;
 `;
+
+export const WarningModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+export const ModalContent = styled.div`
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+`;
+
+export const ModalHeader = styled.div`
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: #d32f2f;
+  
+  svg {
+    margin-right: 10px;
+  }
+`;
+
+export const ModalCloseButton = styled.button`
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #666;
+  
+  &:hover {
+    color: #333;
+  }
+`;
+
+export const ModalBody = styled.div`
+  padding: 20px;
+  
+  p {
+    margin-bottom: 15px;
+    line-height: 1.5;
+  }
+  
+  ul {
+    margin: 15px 0;
+    padding-left: 20px;
+  }
+`;
+
+export const ModalFooter = styled.div`
+  padding: 16px 20px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  
+  button {
+    padding: 8px 16px;
+    background: #d32f2f;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    
+    &:hover {
+      background: #b71c1c;
+    }
+  }
+`;
+
+export const WarningItem = styled.li`
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  
+  svg {
+    margin-right: 8px;
+    color: #d32f2f;
+  }
+`;
+
+export const PriceEvaluation = styled.div`
+  margin-top: 20px;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  
+  h4 {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    
+    svg {
+      margin-right: 8px;
+      color: #1976d2;
+    }
+  }
+  
+  .stats-summary {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed #ddd;
+  }
+`;
+
+export const StatsRow = styled.div`
+  display: flex;
+  margin: 10px 0;
+  
+  div {
+    flex: 1;
+    
+    strong {
+      display: block;
+      margin-bottom: 4px;
+      color: #555;
+    }
+    
+    span {
+      font-weight: 600;
+      color: #333;
+    }
+    
+    &:first-child {
+      margin-right: 15px;
+    }
+  }
+`;

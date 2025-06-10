@@ -96,8 +96,8 @@ export default function ChatBox() {
   useEffect(() => {
     if (landlord) {
       const requestData = {
-        first: user?.id, // Kiểm tra nếu user tồn tại
-        seconde: landlord,
+        firstUserId : user?.id, // Kiểm tra nếu user tồn tại
+        secondUserId: landlord,
       };
       createChat(requestData).then((chatResponse) => {
         const chatId = chatResponse.data._id;

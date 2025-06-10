@@ -100,8 +100,6 @@ const AuthProvider = ({ children }) => {
 };
 
 const updateRole = async (userId, newRole) => {
-  // Logic để cập nhật vai trò của người dùng trong cơ sở dữ liệu
-  // Có thể gọi API để thực hiện điều này
 };
 
 export default AuthProvider;

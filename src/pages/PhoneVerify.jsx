@@ -1,7 +1,6 @@
-// src/pages/PhoneVerify.jsx
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { useNavigate } from "react-router-dom"; // Thay đổi từ useHistory sang useNavigate
+import { useNavigate, Link } from "react-router-dom"; // Thay đổi từ useHistory sang useNavigate
 import "../assets/styles/PhoneVerification.css";
 import { Dialog } from "@mui/material";
 import axios from "axios";
@@ -50,7 +49,18 @@ const PhoneVerification = () => {
   if (!user) {
     return (
       <div className="phone-verification">
-        <p>Vui lòng đăng nhập để đăng bài.</p>
+        <p>Vui lòng <Link
+          to="/login"
+          style={{
+            color: '#1890ff',
+            textDecoration: 'underline',
+            cursor: 'pointer',
+            fontWeight: 500,
+            transition: 'color 0.3s'
+          }}
+        >
+          đăng nhập
+        </Link> để đăng bài.</p>
       </div>
     );
   }
