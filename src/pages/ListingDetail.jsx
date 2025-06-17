@@ -11,7 +11,6 @@ import { getUserById } from "../api/users";
 import { useAuth } from "../hooks/useAuth";
 import { toast } from "react-toastify";
 import Comments from "../pages/Comment";
-import ChatBox from "../pages/ChatBox";
 import ReportForm from "./ReportForm";
 import BookingForm from "./BookingForm";
 import {
@@ -175,6 +174,67 @@ const ListingDetail = () => {
     }
   };
 
+  const renderContactInfo = () => {
+    if (!user) {
+      return (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center justify-center mb-3">
+            <FaLock className="text-yellow-500 mr-2" size={24} />
+            <span className="font-medium text-gray-700">Thông tin được bảo vệ</span>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center p-3 bg-gray-100 rounded-lg">
+              <FaPhoneAlt className="text-gray-400 mr-3" />
+              <div>
+                <div className="text-sm text-gray-500">Số điện thoại</div>
+                <div className="font-medium text-gray-400">*** **** ***</div>
+              </div>
+            </div>
+            <div className="flex items-center p-3 bg-gray-100 rounded-lg">
+              <FaMapMarkerAlt className="text-gray-400 mr-3" />
+              <div>
+                <div className="text-sm text-gray-500">Địa chỉ</div>
+                <div className="font-medium text-gray-400">*** **** ***</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3 mb-6">
+        <div className="flex items-center p-3 bg-gray-50 rounded-lg">
+          <FaPhoneAlt className="text-indigo-600 mr-3" />
+          <div>
+            <div className="text-sm text-gray-500">Số điện thoại</div>
+            <div className="font-medium">
+              {phone ? phone : "Chưa có số điện thoại"}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center p-3 bg-gray-50 rounded-lg">
+          <FaMapMarkerAlt className="text-indigo-600 mr-3" />
+          <div>
+            <div className="text-sm text-gray-500">Địa chỉ</div>
+            <div className="font-medium">
+              {address ? address : "Chưa có địa chỉ"}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const formatPrice = (price) => {
+    if (!price && price !== 0) return "Chưa cập nhật";
+
+    const numPrice = Number(price);
+    if (isNaN(numPrice)) return "Chưa cập nhật";
+
+    return numPrice.toLocaleString('vi-VN') + " VNĐ";
+  };
+
   const nextImage = () => {
     if (!listing || !listing.images || listing.images.length === 0) return;
     setCurrentImageIndex((prevIndex) =>
@@ -328,7 +388,7 @@ const ListingDetail = () => {
                     {listing.averageRating || "5.0"}
                   </span>
                   <span className="text-gray-500 text-xs ml-1">
-                    ({listing.views || 0} đánh giá)
+                    ({listing.views || 0}  lượt xem)
                   </span>
                 </div>
               </div>
@@ -336,11 +396,10 @@ const ListingDetail = () => {
                 <InfoItem
                   icon={FaDollarSign}
                   label="Giá thuê"
-                  value={`${
-                    listing.price
-                      ? listing.price.toLocaleString()
-                      : "Chưa có giá"
-                  } VND/tháng`}
+                  value={`${listing.price
+                    ? listing.price.toLocaleString()
+                    : "Chưa có giá"
+                    } VND/tháng`}
                   highlight={true}
                 />
                 <InfoItem
@@ -479,7 +538,7 @@ const ListingDetail = () => {
                 <InfoItem
                   icon={FaBolt}
                   label="Điện"
-                  value={`${listing.additionalCosts?.electricity || 0} VND/kWh`}
+                  value={`${formatPrice(listing.additionalCosts?.electricity || 0)} VND/kWh`}
                 />
                 <InfoItem
                   icon={FaTint}
@@ -508,9 +567,8 @@ const ListingDetail = () => {
             </h2>
             <div className="bg-white p-5 rounded-xl shadow-sm">
               <p
-                className={`text-gray-700 leading-relaxed whitespace-pre-line ${
-                  !showFullDescription && "line-clamp-6"
-                }`}
+                className={`text-gray-700 leading-relaxed whitespace-pre-line ${!showFullDescription && "line-clamp-6"
+                  }`}
               >
                 {listing.description}
               </p>
@@ -544,7 +602,7 @@ const ListingDetail = () => {
                   {listing.averageRating || "5.0"}
                 </span>
                 <span className="text-gray-500 text-xs ml-1">
-                  ({listing.views || 0} đánh giá)
+                  ({listing.views || 0} lượt xem)
                 </span>
               </div>
             </div>
@@ -569,9 +627,8 @@ const ListingDetail = () => {
                     className="w-16 h-16 rounded-full object-cover border-2 border-indigo-100"
                   />
                   <div
-                    className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white ${
-                      isOnline ? "bg-green-500" : "bg-gray-400"
-                    }`}
+                    className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white ${isOnline ? "bg-green-500" : "bg-gray-400"
+                      }`}
                   ></div>
                 </div>
                 <div className="ml-4">
@@ -621,7 +678,7 @@ const ListingDetail = () => {
                     onClick={() => {
                       const phoneNumber = phone;
                       if (phoneNumber) {
-                        window.location.href = `tel:${phoneNumber}`;
+                        window.open(`https://zalo.me/0364745239`, '_blank');
                       } else {
                         toast.error(
                           "Số điện thoại của chủ trọ không khả dụng.",
@@ -656,7 +713,7 @@ const ListingDetail = () => {
                       >
                         đăng nhập
                       </Link>{" "}
-                      để đặt lịch xem phòng, liên hệ hoặc báo cáo tin đăng này.
+                      để xem thông tin iên hệ, đặt lịch xem phòng hoặc báo cáo tin đăng này.
                     </p>
                   </div>
                 </div>
@@ -711,9 +768,8 @@ const ListingDetail = () => {
                 <div className="flex items-center space-x-3">
                   <button
                     onClick={toggleFavorite}
-                    className={`flex items-center ${
-                      isFavorited ? "text-red-500" : "text-gray-500"
-                    } hover:text-red-600 transition duration-300 bg-gray-50 px-3 py-2 rounded-lg`}
+                    className={`flex items-center ${isFavorited ? "text-red-500" : "text-gray-500"
+                      } hover:text-red-600 transition duration-300 bg-gray-50 px-3 py-2 rounded-lg`}
                     disabled={loadingFavorite}
                   >
                     {isFavorited ? (
@@ -725,45 +781,10 @@ const ListingDetail = () => {
                       {loadingFavorite ? "Đang xử lý..." : "Yêu thích"}
                     </span>
                   </button>
-                  <div className="relative">
-                    <button
-                      onClick={handleShare}
-                      className="flex items-center text-indigo-600 hover:text-indigo-800 transition duration-300 bg-indigo-50 px-3 py-2 rounded-lg"
-                    >
-                      <FaShareAlt size={18} />
-                      <span className="ml-2 font-medium">Chia sẻ</span>
-                    </button>
-                    {showShareOptions && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10 p-2">
-                        <button
-                          onClick={copyToClipboard}
-                          className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded-md flex items-center"
-                        >
-                          {copied ? (
-                            <FaCheckCircle className="mr-2 text-green-500" />
-                          ) : (
-                            <FaExternalLinkAlt className="mr-2" />
-                          )}
-                          {copied ? "Đã sao chép" : "Sao chép liên kết"}
-                        </button>
-                        <a
-                          href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                            window.location.href
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded-md flex items-center"
-                        >
-                          <FaFacebook className="mr-2 text-blue-600" />
-                          Chia sẻ Facebook
-                        </a>
-                      </div>
-                    )}
-                  </div>
+
                 </div>
               </div>
 
-              {/* Listing meta info */}
               <div className="flex flex-wrap items-center mb-6 text-gray-600 text-sm">
                 <div className="flex items-center mr-4 mb-2">
                   <FaMapMarkerAlt className="mr-1 text-indigo-500" />
@@ -783,11 +804,7 @@ const ListingDetail = () => {
                   <span>{listing.views || 0} lượt xem</span>
                 </div>
                 <div className="flex items-center mb-2">
-                  <FaStar className="mr-1 text-yellow-500" />
-                  <span>
-                    {listing.averageRating || "5.0"} ({listing.views || 0} đánh
-                    giá)
-                  </span>
+
                 </div>
               </div>
 
@@ -832,11 +849,10 @@ const ListingDetail = () => {
                     <button
                       key={index}
                       onClick={() => setCurrentImageIndex(index)}
-                      className={`flex-shrink-0 rounded-lg overflow-hidden ${
-                        currentImageIndex === index
-                          ? "ring-2 ring-indigo-500"
-                          : "opacity-70 hover:opacity-100 transition"
-                      }`}
+                      className={`flex-shrink-0 rounded-lg overflow-hidden ${currentImageIndex === index
+                        ? "ring-2 ring-indigo-500"
+                        : "opacity-70 hover:opacity-100 transition"
+                        }`}
                     >
                       <img
                         src={image.url || "/placeholder.svg?height=80&width=80"}
@@ -852,41 +868,37 @@ const ListingDetail = () => {
               <div className="flex overflow-x-auto mb-6 lg:hidden">
                 <button
                   onClick={() => setActiveTab("details")}
-                  className={`px-4 py-2 mr-2 rounded-lg text-sm whitespace-nowrap flex items-center ${
-                    activeTab === "details"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
+                  className={`px-4 py-2 mr-2 rounded-lg text-sm whitespace-nowrap flex items-center ${activeTab === "details"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
                 >
                   <FaInfoCircle className="mr-1" /> Chi tiết
                 </button>
                 <button
                   onClick={() => setActiveTab("description")}
-                  className={`px-4 py-2 mr-2 rounded-lg text-sm whitespace-nowrap flex items-center ${
-                    activeTab === "description"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
+                  className={`px-4 py-2 mr-2 rounded-lg text-sm whitespace-nowrap flex items-center ${activeTab === "description"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
                 >
                   <FaInfoIcon className="mr-1" /> Mô tả
                 </button>
                 <button
                   onClick={() => setActiveTab("comments")}
-                  className={`px-4 py-2 mr-2 rounded-lg text-sm whitespace-nowrap flex items-center ${
-                    activeTab === "comments"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
+                  className={`px-4 py-2 mr-2 rounded-lg text-sm whitespace-nowrap flex items-center ${activeTab === "comments"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
                 >
                   <FaComments className="mr-1" /> Đánh giá
                 </button>
                 <button
                   onClick={() => setActiveTab("contact")}
-                  className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap flex items-center ${
-                    activeTab === "contact"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
+                  className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap flex items-center ${activeTab === "contact"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
                 >
                   <FaUserCircleIcon className="mr-1" /> Liên hệ
                 </button>
@@ -918,11 +930,10 @@ const ListingDetail = () => {
                     <InfoItem
                       icon={FaDollarSign}
                       label="Giá thuê"
-                      value={`${
-                        listing.price
-                          ? listing.price.toLocaleString()
-                          : "Chưa có giá"
-                      } VND/tháng`}
+                      value={`${listing.price
+                        ? listing.price.toLocaleString()
+                        : "Chưa có giá"
+                        } VND/tháng`}
                       highlight={true}
                     />
                     <InfoItem
@@ -1064,54 +1075,29 @@ const ListingDetail = () => {
                     <InfoItem
                       icon={FaBolt}
                       label="Điện"
-                      value={`${
-                        listing.additionalCosts?.electricity || 0
-                      } VND/kWh`}
+                      value={`${formatPrice(listing.additionalCosts?.electricity || 0)}/kWh`}
                     />
                     <InfoItem
                       icon={FaTint}
                       label="Nước"
-                      value={`${listing.additionalCosts?.water || 0} VND/m³`}
+                      value={`${formatPrice(listing.additionalCosts?.water || 0)} VND/m³`}
                     />
                     <InfoItem
                       icon={FaWifi}
                       label="Internet"
-                      value={`${
-                        listing.additionalCosts?.internet || 0
-                      } VND/tháng`}
+                      value={`${formatPrice(listing.additionalCosts?.internet || 0
+                        )} VND/tháng`}
                     />
                     <InfoItem
                       icon={FaBroom}
                       label="Dọn dẹp"
-                      value={`${
-                        listing.additionalCosts?.cleaning || 0
-                      } VND/tháng`}
+                      value={`${formatPrice(listing.additionalCosts?.cleaning || 0
+                        )} VND/tháng`}
                     />
                   </div>
                 </div>
 
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-indigo-900 flex items-center">
-                      <FaComments className="mr-2 text-indigo-600" /> Đánh giá &
-                      Bình luận
-                    </h2>
-                    <div className="flex items-center bg-yellow-50 px-4 py-2 rounded-lg border border-yellow-200">
-                      <div className="flex mr-2">
-                        {renderStarRating(listing.averageRating || 5)}
-                      </div>
-                      <span className="font-bold text-yellow-700">
-                        {listing.averageRating || "5.0"}
-                      </span>
-                      <span className="text-gray-500 text-sm ml-1">
-                        ({listing.views || 0} đánh giá)
-                      </span>
-                    </div>
-                  </div>
-                  <div className="bg-gray-50 rounded-xl overflow-hidden">
-                    <Comments listingId={id} />
-                  </div>
-                </div>
+
               </div>
             </div>
 
@@ -1119,7 +1105,7 @@ const ListingDetail = () => {
             <div className="hidden lg:block lg:w-1/3 bg-indigo-50 p-8">
               <div className="bg-white rounded-xl shadow-lg p-6 sticky top-8">
                 <h2 className="text-2xl font-bold text-indigo-900 mb-6">
-                  Liên hệ với Chủ trọ
+                  Liên hệ với chủ trọ
                 </h2>
                 <div className="flex items-center mb-6">
                   <div className="relative">
@@ -1129,9 +1115,8 @@ const ListingDetail = () => {
                       className="w-16 h-16 rounded-full object-cover border-2 border-indigo-100"
                     />
                     <div
-                      className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white ${
-                        isOnline ? "bg-green-500" : "bg-gray-400"
-                      }`}
+                      className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white ${isOnline ? "bg-green-500" : "bg-gray-400"
+                        }`}
                     ></div>
                   </div>
                   <div className="ml-4">
@@ -1139,36 +1124,12 @@ const ListingDetail = () => {
                       {username || "Chủ trọ"}
                     </h3>
                     <div className="flex items-center">
-                      <span className="text-sm text-gray-600">
-                        {isOnline ? "Đang trực tuyến" : "Không trực tuyến"}
-                      </span>
-                      <span className="mx-2 text-gray-300">•</span>
-                      <span className="text-sm text-gray-600">
-                        Phản hồi trong vòng 24 giờ
-                      </span>
+
+
                     </div>
                   </div>
                 </div>
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-                    <FaPhoneAlt className="text-indigo-600 mr-3" />
-                    <div>
-                      <div className="text-sm text-gray-500">Số điện thoại</div>
-                      <div className="font-medium">
-                        {phone ? phone : "Chưa có số điện thoại"}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-                    <FaMapMarkerAlt className="text-indigo-600 mr-3" />
-                    <div>
-                      <div className="text-sm text-gray-500">Địa chỉ</div>
-                      <div className="font-medium">
-                        {address ? address : "Chưa có địa chỉ"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {renderContactInfo()}
                 {user ? (
                   <>
                     <button
@@ -1181,7 +1142,7 @@ const ListingDetail = () => {
                       onClick={() => {
                         const phoneNumber = phone;
                         if (phoneNumber) {
-                          window.location.href = `tel:${phoneNumber}`;
+                          window.open(`https://zalo.me/${phoneNumber}`, '_blank');
                         } else {
                           toast.error(
                             "Số điện thoại của chủ trọ không khả dụng.",
@@ -1319,11 +1280,10 @@ const ListingDetail = () => {
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`flex-shrink-0 ${
-                    currentImageIndex === index
-                      ? "ring-2 ring-indigo-500"
-                      : "opacity-60 hover:opacity-100 transition"
-                  }`}
+                  className={`flex-shrink-0 ${currentImageIndex === index
+                    ? "ring-2 ring-indigo-500"
+                    : "opacity-60 hover:opacity-100 transition"
+                    }`}
                 >
                   <img
                     src={image.url || "/placeholder.svg?height=80&width=80"}
@@ -1367,28 +1327,25 @@ const ListingDetail = () => {
 
 const InfoItem = ({ icon: Icon, label, value, highlight, status }) => (
   <div
-    className={`flex items-center ${
-      highlight ? "bg-indigo-50 border-l-4 border-indigo-500" : "bg-gray-50"
-    } p-4 rounded-lg`}
+    className={`flex items-center ${highlight ? "bg-indigo-50 border-l-4 border-indigo-500" : "bg-gray-50"
+      } p-4 rounded-lg`}
   >
     <Icon
-      className={`${
-        highlight ? "text-indigo-600" : "text-indigo-500"
-      } mr-3 flex-shrink-0`}
+      className={`${highlight ? "text-indigo-600" : "text-indigo-500"
+        } mr-3 flex-shrink-0`}
       size={18}
     />
     <div className="overflow-hidden">
       <span className="text-sm text-gray-500">{label}</span>
       <div
-        className={`font-semibold ${
-          status === "available"
-            ? "text-green-600"
-            : status === "unavailable"
+        className={`font-semibold ${status === "available"
+          ? "text-green-600"
+          : status === "unavailable"
             ? "text-red-500"
             : highlight
-            ? "text-indigo-900"
-            : "text-gray-800"
-        } break-words`}
+              ? "text-indigo-900"
+              : "text-gray-800"
+          } break-words`}
       >
         {value}
       </div>
@@ -1398,16 +1355,13 @@ const InfoItem = ({ icon: Icon, label, value, highlight, status }) => (
 
 const AmenityItem = ({ icon: Icon, label, available }) => (
   <div
-    className={`flex items-center ${
-      available ? "text-gray-800" : "text-gray-400"
-    } bg-gray-50 p-3 rounded-lg border ${
-      available ? "border-green-100" : "border-gray-100"
-    }`}
+    className={`flex items-center ${available ? "text-gray-800" : "text-gray-400"
+      } bg-gray-50 p-3 rounded-lg border ${available ? "border-green-100" : "border-gray-100"
+      }`}
   >
     <div
-      className={`p-2 rounded-full mr-3 ${
-        available ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"
-      }`}
+      className={`p-2 rounded-full mr-3 ${available ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"
+        }`}
     >
       <Icon size={16} />
     </div>

@@ -5,8 +5,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { MdNotifications, MdMenu, MdClose } from "react-icons/md";
 import { getNotification } from "../../api/notifications";
-import "./Header.css"; // Giả sử bạn sẽ tạo file CSS riêng
-
+import "./Header.css"; 
 const HeaderReponsive = () => {
   const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -16,21 +15,20 @@ const HeaderReponsive = () => {
   const mobileMenuRef = useRef(null);
 
   useEffect(() => {
-    // Fetch notifications using the getNotification function
     const fetchNotifications = async () => {
       try {
-        const response = await getNotification(user.id); // API call to fetch notifications
+        const response = await getNotification(user.id); 
         console.log("Dữ liệu thông báo:", response.data);
-        setNotifications(response.data); // Store the notifications in the state
+        setNotifications(response.data); 
       } catch (error) {
         console.error("Error fetching notifications:", error);
       }
     };
 
     if (user) {
-      fetchNotifications(); // Only fetch notifications if the user is logged in
+      fetchNotifications(); 
     }
-  }, [user]); // Depend on user to fetch notifications when the user changes
+  }, [user]); 
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -215,21 +213,21 @@ const HeaderReponsive = () => {
               className="mobile-link"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Cho thuê phòng trọ
+              Phòng trọ
             </Link>
             <Link
               to="/apartment"
               className="mobile-link"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Cho thuê căn hộ
+              Căn hộ
             </Link>
             <Link
               to="/shared"
               className="mobile-link"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Tìm người ở ghép
+              Ở ghép
             </Link>
             <Link
               to="/Blog"
@@ -259,17 +257,17 @@ const HeaderReponsive = () => {
           </li>
           <li className="navbar-item">
             <Link to="/listings" className="nav-link">
-              Cho thuê phòng trọ
+              Phòng trọ
             </Link>
           </li>
           <li className="navbar-item">
             <Link to="/apartment" className="nav-link">
-              Cho thuê căn hộ
+              Căn hộ
             </Link>
           </li>
           <li className="navbar-item">
             <Link to="/shared" className="nav-link">
-              Tìm người ở ghép
+              Ở ghép
             </Link>
           </li>
           <li className="navbar-item">

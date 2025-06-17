@@ -29,6 +29,7 @@ import {
 } from "@mui/material"
 import { Wifi, AcUnit, DirectionsCar, Elevator, Notifications, Close } from "@mui/icons-material"
 import axios from "axios"
+import "react-toastify/dist/ReactToastify.css"
 
 const PostAlertSubscriptionForm = ({ open, onClose }) => {
     const [formData, setFormData] = useState({
@@ -59,13 +60,17 @@ const PostAlertSubscriptionForm = ({ open, onClose }) => {
         axios.get("https://provinces.open-api.vn/api/p/").then((res) => setCities(res.data))
     }, [])
 
+
     const handleCityChange = (e) => {
         const cityCode = e.target.value
+        const cityName = cities.find(city => city.code === cityCode)?.name || ""
+
         setFormData((prev) => ({
             ...prev,
             location: {
                 ...prev.location,
-                city: cityCode,
+                city: cityName,
+                cityCode: cityCode,
                 district: "",
                 ward: "",
             },
@@ -78,11 +83,14 @@ const PostAlertSubscriptionForm = ({ open, onClose }) => {
 
     const handleDistrictChange = (e) => {
         const districtCode = e.target.value
+        const districtName = districts.find(district => district.code === districtCode)?.name || ""
+
         setFormData((prev) => ({
             ...prev,
             location: {
                 ...prev.location,
-                district: districtCode,
+                district: districtName,
+                districtCode: districtCode,
                 ward: "",
             },
         }))
@@ -93,11 +101,14 @@ const PostAlertSubscriptionForm = ({ open, onClose }) => {
 
     const handleWardChange = (e) => {
         const wardCode = e.target.value
+        const wardName = wards.find(ward => ward.code === wardCode)?.name || ""
+
         setFormData((prev) => ({
             ...prev,
             location: {
                 ...prev.location,
-                ward: wardCode,
+                ward: wardName,
+                wardCode: wardCode,
             },
         }))
     }
@@ -138,41 +149,46 @@ const PostAlertSubscriptionForm = ({ open, onClose }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         try {
             if (!formData.location.city) {
-                alert("Vui lòng chọn thành phố");
+                toast.error("Vui lòng chọn thành phố");
                 return;
             }
-    
+
             const payload = {
-                priceRange: {
-                    min: formData.priceMin,
-                    max: formData.priceMax,
+                criteria: {  // Đổi tên từ priceRange, roomTypes, sizeRange thành đúng tên trong schema
+                    priceMin: formData.priceMin,
+                    priceMax: formData.priceMax,
+                    roomType: formData.roomType,
+                    sizeMin: formData.sizeMin,
+                    sizeMax: formData.sizeMax,
+                    location: {
+                        city: formData.location.city,
+                        district: formData.location.district,
+                        ward: formData.location.ward,
+                    },
+                    amenities: formData.amenities,
                 },
-                roomTypes: formData.roomType,
-                sizeRange: {
-                    min: formData.sizeMin,
-                    max: formData.sizeMax,
-                },
-                location: {
-                    city: formData.location.city,
-                    district: formData.location.district,
-                    ward: formData.location.ward,
-                },
-                amenities: formData.amenities,
-                notificationFrequency: formData.emailFrequency,
+                emailFrequency: formData.emailFrequency,
             };
-    
+
             const response = await axios.post("http://localhost:5000/api/alert/create", payload, {
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${localStorage.getItem("token")}`,
                 },
             });
-    
+
             if (response.status === 200 || response.status === 201) {
-                toast.success("Đăng ký nhận thông báo thành công!");
+                toast.success("🎉 Đăng ký nhận thông báo thành công!", {
+                    position: "top-right",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                });
                 setFormData({
                     priceMin: 0,
                     priceMax: 10000000,
@@ -192,13 +208,27 @@ const PostAlertSubscriptionForm = ({ open, onClose }) => {
                     },
                     emailFrequency: "daily",
                 });
-                onClose();
+                setTimeout(() => {
+                    onClose();
+                }, 1000);
             } else {
-                alert("Có lỗi xảy ra khi đăng ký.");
+                toast.error("❌ Có lỗi xảy ra khi đăng ký!");
             }
         } catch (error) {
             console.error("Lỗi khi gửi dữ liệu:", error);
-            alert("Đã có lỗi xảy ra. Vui lòng thử lại sau.");
+
+            const errorMessage = error.response?.data?.message ||
+                error.response?.data?.error ||
+                "Đã có lỗi xảy ra. Vui lòng thử lại sau.";
+
+            toast.error(`❌ ${errorMessage}`, {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+            });
         }
     };
 
@@ -206,7 +236,6 @@ const PostAlertSubscriptionForm = ({ open, onClose }) => {
 
     return (
         <>
-            <ToastContainer/>
             <Dialog
                 open={open}
                 onClose={onClose}
@@ -214,12 +243,25 @@ const PostAlertSubscriptionForm = ({ open, onClose }) => {
                 fullWidth
                 scroll="paper"
             >
+                <ToastContainer
+                    position="top-right"
+                    autoClose={3000}
+                    hideProgressBar={false}
+                    newestOnTop={false}
+                    closeOnClick
+                    rtl={false}
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                    theme="light"
+                    style={{ zIndex: 9999 }}
+                />
                 <Box sx={{ position: 'absolute', right: 8, top: 8 }}>
                     <IconButton onClick={onClose}>
                         <Close />
                     </IconButton>
                 </Box>
-                
+
                 <DialogContent>
                     <Card elevation={0} sx={{ border: 'none', boxShadow: 'none' }}>
                         <CardHeader
@@ -370,7 +412,7 @@ const PostAlertSubscriptionForm = ({ open, onClose }) => {
                                             <Grid item xs={12} sm={4}>
                                                 <FormControl fullWidth>
                                                     <Select
-                                                        value={formData.location.city}
+                                                        value={formData.location.cityCode || ""} // Dùng cityCode để select
                                                         onChange={handleCityChange}
                                                         displayEmpty
                                                     >
@@ -388,10 +430,10 @@ const PostAlertSubscriptionForm = ({ open, onClose }) => {
                                             <Grid item xs={12} sm={4}>
                                                 <FormControl fullWidth>
                                                     <Select
-                                                        value={formData.location.district}
+                                                        value={formData.location.districtCode || ""} // Dùng districtCode
                                                         onChange={handleDistrictChange}
                                                         displayEmpty
-                                                        disabled={!formData.location.city}
+                                                        disabled={!formData.location.cityCode}
                                                     >
                                                         <MenuItem value="">Chọn quận/huyện</MenuItem>
                                                         {districts.map((d) => (
@@ -407,10 +449,10 @@ const PostAlertSubscriptionForm = ({ open, onClose }) => {
                                             <Grid item xs={12} sm={4}>
                                                 <FormControl fullWidth>
                                                     <Select
-                                                        value={formData.location.ward}
+                                                        value={formData.location.wardCode || ""} // Dùng wardCode
                                                         onChange={handleWardChange}
                                                         displayEmpty
-                                                        disabled={!formData.location.district}
+                                                        disabled={!formData.location.districtCode}
                                                     >
                                                         <MenuItem value="">Chọn phường/xã</MenuItem>
                                                         {wards.map((w) => (

@@ -196,7 +196,7 @@ const ThankYouPage = () => {
           <StyledButton
             variant="contained"
             color="primary"
-            onClick={() => (window.location.href = "/packages")}
+            onClick={() => (window.location.href = "/package")}
           >
             Try Again
           </StyledButton>
@@ -226,21 +226,21 @@ const ThankYouPage = () => {
               <IoCheckmarkCircle />
             </Box>
             <Typography variant="h3" component="h1" gutterBottom>
-              Payment Successful!
+              Thanh toán thành công
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-              Thank you for your purchase. Your package has been activated successfully.
+              Cảm ơn vì đã đặt hàng. Gói của bạn đã được kích hoạt thành công.
             </Typography>
 
             {/* Package Information */}
             {packageData && packageData.hasActivePackage && (
               <Alert severity="success" sx={{ mb: 3, maxWidth: 500 }}>
                 <Typography variant="subtitle1" fontWeight="bold">
-                  Package Activated: {packageData.package?.name}
+                  Gói được kích hoạt: {packageData.package?.name}
                 </Typography>
                 <Typography variant="body2">
-                  Posts remaining: {packageData.postsLeft} | 
-                  Expires: {new Date(packageData.expiresAt).toLocaleDateString('vi-VN')}
+                  Số lượng bài đăng còn lại: {packageData.postsLeft} | 
+                  Hạn sử dụng: {new Date(packageData.expiresAt).toLocaleDateString('vi-VN')}
                 </Typography>
               </Alert>
             )}
@@ -249,7 +249,7 @@ const ThankYouPage = () => {
             {paymentData && (
               <PaymentDetailsBox>
                 <Typography variant="h6" gutterBottom>
-                  Payment Details
+                  Chi tiết hóa đơn
                 </Typography>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                   {paymentData.transactionId && (
@@ -287,7 +287,7 @@ const ThankYouPage = () => {
                 color="primary"
                 onClick={handleViewPackage}
               >
-                View Your Package
+                Xem gói của bạn
               </StyledButton>
               <StyledButton
                 variant="outlined"
@@ -295,7 +295,7 @@ const ThankYouPage = () => {
                 startIcon={<IoHomeOutline />}
                 onClick={() => (window.location.href = "/")}
               >
-                Back to Home
+                Về trang chủ
               </StyledButton>
             </Box>
           </>

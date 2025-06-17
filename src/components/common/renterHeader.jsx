@@ -249,7 +249,7 @@ const RenterHeader = () => {
                       </svg>
                       <span>Thông tin cá nhân</span>
                     </Link>
-                    <Link to="/profile" style={styles.userMenuItem}>
+                    <Link to="/mypackage" style={styles.userMenuItem}>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -324,7 +324,7 @@ const RenterHeader = () => {
                 </Link>
               </>
             )}
-            
+
             {/* Post Button */}
             <Link to="/package" style={styles.packageButton}>
               <svg
@@ -343,33 +343,43 @@ const RenterHeader = () => {
               </svg>
               <span>Mua gói </span>
             </Link>
-            <Button 
-  onClick={() => setOpen(true)} 
-  style={styles.packageButton}
-  startIcon={
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={{ ...styles.actionIcon, marginRight: '6px' }}
-    >
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-    </svg>
-  }
->
-  Nhận tin
-</Button>
 
-{/* Thêm popup form */}
-<PostAlertSubscriptionForm 
-  open={open} 
-  onClose={() => setOpen(false)} 
-/>
+            <Button
+              onClick={() => setOpen(true)}
+              style={{
+                ...styles.packageButton,
+                minWidth: 'auto', // Override Material-UI default minWidth
+                textTransform: 'none', // Không viết hoa chữ cái đầu
+                fontFamily: 'inherit', // Sử dụng font family giống như Link
+                boxShadow: 'none', // Bỏ shadow mặc định của Material-UI
+                '&:hover': {
+                  boxShadow: 'none' // Bỏ shadow khi hover
+                }
+              }}
+              startIcon={
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={styles.actionIcon} // Bỏ marginRight vì startIcon tự động có spacing
+                >
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+              }
+            >
+              Nhận tin
+            </Button>
+
+            {/* Thêm popup form */}
+            <PostAlertSubscriptionForm
+              open={open}
+              onClose={() => setOpen(false)}
+            />
             <Link to="/create-post" style={styles.postButton}>
               Đăng tin
             </Link>
@@ -396,6 +406,11 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500',
     marginLeft: '4px',
+    minWidth: '85px', // Thêm minWidth để đảm bảo cùng kích thước
+    justifyContent: 'center', // Center content
+    height: '32px', // Fixed height
+    border: 'none', // Cho Material-UI Button
+    cursor: 'pointer', // Cho Material-UI Button
   },
   header: {
     backgroundColor: "#0056b3",

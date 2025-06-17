@@ -25,8 +25,6 @@ import {
   getAllPosts,
 } from "../api/post";
 
-import GeminiChatBox from "./ChatBoxGemini";
-
 const Home = () => {
   const [featuredProperties, setFeaturedProperties] = useState([]);
   const [topViewedPosts, setTopViewedPosts] = useState([]);
@@ -96,10 +94,114 @@ const Home = () => {
     fetchInitialData();
   }, []);
 
+  // HÀM RENDER WARNING TAGS - ĐẶT Ở CẤPP COMPONENT
+  const renderWarningTags = (property) => {
+    console.log('Property data:', property);
+    console.log('Warnings:', property.warnings);
+    console.log('Price Evaluation:', property.priceEvaluation);
+    console.log('Image Check:', property.imageCheck);
+    const tags = [];
+
+    // Hiển thị warning tags
+    if (property.warnings && property.warnings.length > 0) {
+      property.warnings.forEach((warning, index) => {
+        let tagStyle = "bg-red-100 text-red-700 border-red-200";
+        let icon = "⚠️";
+
+        // Phân loại warning theo nội dung
+        if (warning.toLowerCase().includes("giá")) {
+          if (warning.toLowerCase().includes("cao")) {
+            tagStyle = "bg-orange-100 text-orange-700 border-orange-200";
+            icon = "📈";
+          } else if (warning.toLowerCase().includes("thấp")) {
+            tagStyle = "bg-blue-100 text-blue-700 border-blue-200";
+            icon = "📉";
+          }
+        } else if (warning.toLowerCase().includes("ảnh") || warning.toLowerCase().includes("trùng")) {
+          tagStyle = "bg-yellow-100 text-yellow-700 border-yellow-200";
+          icon = "🔍";
+        }
+
+        tags.push(
+        <span
+          key={`warning-${index}`}
+          className={`inline-flex items-center text-xs px-2 py-1 rounded-full border font-medium mr-1 mb-1 ${tagStyle}`}
+          title={warning} // Tooltip hiện full text
+        >
+          <span className="mr-1">{icon}</span>
+          {warning} {/* BỎ GIỚI HẠN .substring(0, 25) */}
+        </span>
+        );
+      });
+    }
+
+    // Hiển thị price evaluation tag nếu không có warning về giá
+    if (property.priceEvaluation && property.priceEvaluation.level && 
+        !property.warnings?.some(w => w.toLowerCase().includes("giá"))) {
+      let evalTag = null;
+      const level = property.priceEvaluation.level;
+
+      if (level === 'high') {
+        evalTag = (
+          <span
+            key="price-eval"
+            className="inline-flex items-center text-xs px-2 py-1 rounded-full border bg-orange-100 text-orange-700 border-orange-200 font-medium mr-1 mb-1"
+            title={`Giá cao hơn thị trường${property.priceEvaluation.predictedPrice ? ` - Dự đoán: ${property.priceEvaluation.predictedPrice.toLocaleString()} VNĐ` : ''}`}
+          >
+            <span className="mr-1">💰</span>
+            Giá cao
+          </span>
+        );
+      } else if (level === 'low') {
+        evalTag = (
+          <span
+            key="price-eval"
+            className="inline-flex items-center text-xs px-2 py-1 rounded-full border bg-green-100 text-green-700 border-green-200 font-medium mr-1 mb-1"
+            title={`Giá thấp hơn thị trường${property.priceEvaluation.predictedPrice ? ` - Dự đoán: ${property.priceEvaluation.predictedPrice.toLocaleString()} VNĐ` : ''}`}
+          >
+            <span className="mr-1">💚</span>
+            Giá tốt
+          </span>
+        );
+      } else if (level === 'normal') {
+        evalTag = (
+          <span
+            key="price-eval"
+            className="inline-flex items-center text-xs px-2 py-1 rounded-full border bg-gray-100 text-gray-700 border-gray-200 font-medium mr-1 mb-1"
+            title={`Giá phù hợp thị trường${property.priceEvaluation.predictedPrice ? ` - Dự đoán: ${property.priceEvaluation.predictedPrice.toLocaleString()} VNĐ` : ''}`}
+          >
+            <span className="mr-1">✅</span>
+            Giá hợp lý
+          </span>
+        );
+      }
+
+      if (evalTag) {
+        tags.push(evalTag);
+      }
+    }
+
+    // Hiển thị duplicate image tag nếu có
+    if (property.imageCheck && property.imageCheck.hasDuplicates && 
+        !property.warnings?.some(w => w.toLowerCase().includes("ảnh") || w.toLowerCase().includes("trùng"))) {
+      tags.push(
+        <span
+          key="image-duplicate"
+          className="inline-flex items-center text-xs px-2 py-1 rounded-full border bg-yellow-100 text-yellow-700 border-yellow-200 font-medium mr-1 mb-1"
+          title="Ảnh có thể trùng lặp với bài khác"
+        >
+          <span className="mr-1">📷</span>
+          Ảnh tương tự
+        </span>
+      );
+    }
+
+    return tags;
+  };
+
   const handleSearchChange = (e) => {
     const { name, value } = e.target;
     setSearchParams((prevParams) => ({ ...prevParams, [name]: value }));
-    // Clear the error for this field when the user starts typing
     setErrors((prevErrors) => ({ ...prevErrors, [name]: null }));
   };
 
@@ -264,6 +366,12 @@ const Home = () => {
               <h3 className="text-lg font-bold mb-2 text-gray-800 line-clamp-2 h-14">
                 {property.title}
               </h3>
+              
+              {/* THÊM WARNING TAGS */}
+              <div className="mb-3 min-h-[28px]">
+                {renderWarningTags(property)}
+              </div>
+              
               <p className="text-sm text-gray-600 mb-3 flex items-start">
                 <FaMapMarkerAlt className="mr-1 text-blue-500 mt-1 flex-shrink-0" />
                 <span className="line-clamp-2 h-10">
@@ -352,6 +460,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      {/* Mobile Menu Button */}
       <div className="fixed top-4 right-4 z-50 md:hidden">
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -630,7 +739,7 @@ const Home = () => {
           </p>
         </header>
 
-        {/* Search Form - Collapsible on mobile */}
+        {/* Search Form */}
         <div className="mb-8">
           <div className="md:hidden">
             <button
@@ -828,6 +937,7 @@ const Home = () => {
           </form>
         </div>
 
+        {/* Loading Search */}
         {loadingSearch ? (
           <div className="text-center py-8 sm:py-12">
             <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -836,6 +946,7 @@ const Home = () => {
             </p>
           </div>
         ) : showSearchResults ? (
+          /* SEARCH RESULTS SECTION - CÓ WARNING TAGS */
           <section className="mb-12 sm:mb-16">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl sm:text-3xl font-bold text-blue-900">
@@ -886,6 +997,12 @@ const Home = () => {
                       <h3 className="text-lg font-bold mb-2 text-gray-800 line-clamp-2 h-14">
                         {property.title}
                       </h3>
+                      
+                      {/* THÊM WARNING TAGS CHO SEARCH RESULTS */}
+                      <div className="mb-3 min-h-[28px]">
+                        {renderWarningTags(property)}
+                      </div>
+
                       <p className="text-sm text-gray-600 mb-3 flex items-start">
                         <FaMapMarkerAlt className="mr-1 text-blue-500 mt-1 flex-shrink-0" />
                         <span className="line-clamp-2 h-10">
@@ -933,7 +1050,7 @@ const Home = () => {
           </section>
         ) : null}
 
-        {/* Main Content - Stacked vertically on all screen sizes */}
+        {/* Main Content */}
         <div className="space-y-12">
           {/* Recently Updated Properties */}
           <section>
@@ -1000,6 +1117,7 @@ const Home = () => {
           ))}
         </div>
 
+        {/* Footer */}
         <footer className="mt-12 sm:mt-16 text-center bg-blue-900 text-white p-6 sm:p-12 rounded-xl sm:rounded-2xl shadow-xl">
           <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">
             Liên hệ với chúng tôi

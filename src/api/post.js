@@ -1,4 +1,3 @@
-// src/api/post.js
 import axiosInstance from "./axiosInstance";
 export const createPost = (postData) => {
   return axiosInstance.post("/post/create", postData);

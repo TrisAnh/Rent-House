@@ -15,41 +15,35 @@ const Header = () => {
   const notificationRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
-  // Responsive state
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-  // Apply media queries
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
     };
 
-    // Initial check
     handleResize();
 
-    // Add event listener
     window.addEventListener("resize", handleResize);
 
-    // Cleanup
     return () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
 
   useEffect(() => {
-    // Fetch notifications using the getNotification function
     const fetchNotifications = async () => {
-      setIsLoading(true); // Set loading to true before fetching
+      setIsLoading(true); 
       try {
         if (user && user.id) {
-          const response = await getNotification(user.id); // API call to fetch notifications
+          const response = await getNotification(user.id); 
           console.log("Dữ liệu thông báo:", response.data);
-          setNotifications(response.data); // Store the notifications in the state
+          setNotifications(response.data); 
         }
       } catch (error) {
         console.error("Error fetching notifications:", error);
       } finally {
-        setIsLoading(false); // Set loading to false after fetching, regardless of success or failure
+        setIsLoading(false); 
       }
     };
 
@@ -349,7 +343,7 @@ const Header = () => {
             </>
           )}
           <Link to="/phone" style={postButtonStyle}>
-            ➕ Đăng tin miễn phí
+            ➕ Đăng ký đăng tin
           </Link>
 
           <div style={notificationIconContainer} ref={notificationRef}>
@@ -457,21 +451,21 @@ const Header = () => {
               style={mobileLinkStyle}
               onClick={() => setMobileMenuOpen(false)}
             >
-              Cho thuê phòng trọ
+              Phòng trọ
             </Link>
             <Link
               to="/apartment"
               style={mobileLinkStyle}
               onClick={() => setMobileMenuOpen(false)}
             >
-              Cho thuê căn hộ
+              Căn hộ
             </Link>
             <Link
               to="/shared"
               style={mobileLinkStyle}
               onClick={() => setMobileMenuOpen(false)}
             >
-              Tìm người ở ghép
+              Ở ghép
             </Link>
             <Link
               to="/Blog"
@@ -501,17 +495,17 @@ const Header = () => {
           </li>
           <li style={navbarItemStyle}>
             <Link to="/listings" style={linkStyle}>
-              Cho thuê phòng trọ
+              Phòng trọ
             </Link>
           </li>
           <li style={navbarItemStyle}>
             <Link to="/apartment" style={linkStyle}>
-              Cho thuê căn hộ
+              Căn hộ
             </Link>
           </li>
           <li style={navbarItemStyle}>
             <Link to="/shared" style={linkStyle}>
-              Tìm người ở ghép
+              Ở ghép
             </Link>
           </li>
           <li style={navbarItemStyle}>

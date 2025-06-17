@@ -1,4 +1,3 @@
-// src/api/report.js
 import axiosInstance from "./axiosInstance";
 
 export const createReport = (reportData) => {

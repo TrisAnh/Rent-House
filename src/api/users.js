@@ -1,4 +1,3 @@
-// src/api/users.js
 import axiosInstance from "./axiosInstance";
 
 export const getCurrentUser = () => {

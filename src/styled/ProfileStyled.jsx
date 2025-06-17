@@ -1,6 +1,5 @@
 import styled, { keyframes } from "styled-components";
 
-// Animations
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -17,7 +16,6 @@ const spin = keyframes`
   100% { transform: rotate(360deg); }
 `;
 
-// Container
 export const ProfileContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
@@ -32,7 +30,6 @@ export const ProfileContainer = styled.div`
   }
 `;
 
-// Card
 export const ProfileCard = styled.div`
   background-color: white;
   border-radius: 12px;
@@ -69,7 +66,6 @@ export const ProfileContent = styled.div`
   }
 `;
 
-// Avatar
 export const AvatarContainer = styled.div`
   margin-bottom: 15px;
   position: relative;
@@ -122,7 +118,6 @@ export const UserName = styled.h1`
   }
 `;
 
-// Info Section
 export const InfoSection = styled.section`
   margin-bottom: 30px;
 
@@ -202,7 +197,6 @@ export const InfoValue = styled.p`
   word-break: break-word;
 `;
 
-// Buttons
 export const ActionButton = styled.button`
   background-color: #0056b3;
   color: white;
@@ -236,7 +230,6 @@ export const ActionButton = styled.button`
   }
 `;
 
-// Messages
 export const MessageContainer = styled.div`
   display: flex;
   align-items: center;
@@ -258,7 +251,6 @@ export const MessageContainer = styled.div`
   }
 `;
 
-// Loading
 export const LoadingContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -282,7 +274,6 @@ export const LoadingText = styled.p`
   font-size: 16px;
 `;
 
-// Skeleton Loading
 export const SkeletonCard = styled.div`
   background-color: white;
   border-radius: 12px;

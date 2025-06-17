@@ -30,7 +30,6 @@ import styled from "styled-components";
 
 const ITEMS_PER_PAGE = 6;
 
-// Styled Components
 const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
@@ -39,12 +38,10 @@ const Container = styled.div`
     sans-serif;
 `;
 
-// Update the Header component to be more compact
 const Header = styled.header`
   margin-bottom: 1.5rem;
 `;
 
-// Update the StatsContainer to match the reference design
 const StatsContainer = styled.div`
   display: inline-flex;
   align-items: center;
@@ -62,7 +59,6 @@ const StatsText = styled.span`
   color: #333;
 `;
 
-// Update the FiltersContainer to match the reference layout
 const FiltersContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
@@ -72,14 +68,12 @@ const FiltersContainer = styled.div`
   justify-content: space-between;
 `;
 
-// Update the FilterButtonsWrapper to have proper spacing
 const FilterButtonsWrapper = styled.div`
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
 `;
 
-// Update the FilterButton to match the reference design
 const FilterButton = styled.button`
   padding: 0.5rem 1rem;
   background-color: ${(props) => (props.$active ? "#3498db" : "#f5f5f5")};
@@ -143,14 +137,12 @@ const DistrictItem = styled.button`
   }
 `;
 
-// Update the SearchContainer to match the reference design
 const SearchContainer = styled.div`
   position: relative;
   flex-grow: 1;
   max-width: 300px;
 `;
 
-// Update the SearchInput to match the reference design
 const SearchInput = styled.input`
   width: 100%;
   padding: 0.5rem 1rem 0.5rem 2.5rem;
@@ -174,7 +166,6 @@ const SearchIcon = styled.div`
   color: #95a5a6;
 `;
 
-// Update the MainContent layout to match the reference design
 const MainContent = styled.div`
   display: grid;
   grid-template-columns: 1fr 350px;
@@ -191,7 +182,6 @@ const ListingsContainer = styled.div`
   gap: 1.5rem;
 `;
 
-// Update the CategoryHeader to be more compact
 const CategoryHeader = styled.div`
   display: flex;
   justify-content: space-between;
@@ -386,7 +376,6 @@ const Pagination = styled.div`
   margin-top: 2rem;
 `;
 
-// Update the SidebarCard to match the reference design
 const SidebarCard = styled.div`
   background: white;
   border-radius: 4px;
@@ -396,7 +385,6 @@ const SidebarCard = styled.div`
   margin-bottom: 1.5rem;
 `;
 
-// Update the SidebarHeader to match the reference design
 const SidebarHeader = styled.div`
   padding: 0.75rem 1rem;
   background: #f5f5f5;
@@ -413,7 +401,6 @@ const SidebarContent = styled.div`
   padding: 1rem;
 `;
 
-// Update the StatItem to match the reference design
 const StatItem = styled.div`
   display: flex;
   justify-content: space-between;
@@ -544,21 +531,19 @@ const NoResultsText = styled.p`
   font-size: 0.875rem;
 `;
 
-// Update the Title to be more compact
 const Title = styled.h1`
   font-size: 1.5rem;
   color: #333;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  display: none; /* Hide the title to match the reference design */
+  display: none; 
 `;
 
-// Update the Subtitle to be more compact
 const Subtitle = styled.p`
   font-size: 1rem;
   color: #666;
   margin-bottom: 1rem;
-  display: none; /* Hide the subtitle to match the reference design */
+  display: none; 
 `;
 
 const Sidebar = styled.aside`
@@ -567,7 +552,6 @@ const Sidebar = styled.aside`
   gap: 1.5rem;
 `;
 
-// New styled components for price range filter
 const PriceRangeGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -598,7 +582,6 @@ const PriceRangeArrow = styled.span`
   font-size: 1rem;
 `;
 
-// New styled components for blog posts
 const BlogLink = styled(Link)`
   display: flex;
   align-items: center;
@@ -620,9 +603,7 @@ const BlogArrow = styled.span`
   font-size: 1rem;
 `;
 
-// Add these new styled components after the existing styled components and before the component definition
 
-// New styled components for the footer section
 const FooterSection = styled.div`
   margin-top: 3rem;
   padding: 2rem;
@@ -675,7 +656,6 @@ const FooterExpandedContent = styled.div`
   display: ${(props) => (props.$expanded ? "block" : "none")};
 `;
 
-// Update the component name to match the functionality
 export default function SharedRoomListings() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -689,7 +669,6 @@ export default function SharedRoomListings() {
   const [searchTerm, setSearchTerm] = useState("");
   const [totalShared, setTotalShared] = useState(0);
   const [blogs, setBlogs] = useState([]);
-  // Add this new state for the footer expand functionality
   const [footerExpanded, setFooterExpanded] = useState(false);
 
   const location = useLocation();
@@ -710,7 +689,6 @@ export default function SharedRoomListings() {
     }
   }, [district]);
 
-  // Close district dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showDistrictList && !event.target.closest(".district-dropdown")) {
@@ -916,7 +894,6 @@ export default function SharedRoomListings() {
     );
   }
 
-  // Add this new function to toggle the footer expanded state
   const toggleFooterExpanded = () => {
     setFooterExpanded(!footerExpanded);
   };

@@ -7,11 +7,10 @@ export const MainContainer = styled.div`
   align-items: flex-start;
   max-width: 1200px;
   margin: auto;
-  padding: 20px; /* Thêm padding cho container chính */
-  background-color: #f4f6f8; /* Màu nền nhẹ cho toàn bộ trang */
+  padding: 20px; 
+  background-color: #f4f6f8; 
 `;
 
-// Container chi tiết
 export const DetailContainer = styled.div`
   padding: 2.5rem;
   max-width: 800px;
@@ -53,7 +52,6 @@ export const Image = styled.img`
   }
 `;
 
-// Video
 export const Video = styled.video`
   width: 100%;
   height: 400px;
@@ -61,7 +59,6 @@ export const Video = styled.video`
   border-radius: 16px;
 `;
 
-// Tiêu đề
 export const Title = styled.h2`
   margin-bottom: 1rem;
   color: #2c3e50;
@@ -70,7 +67,6 @@ export const Title = styled.h2`
   font-size: 1.8rem;
 `;
 
-// Văn bản thông tin
 export const InfoText = styled.p`
   font-size: 1rem;
   line-height: 1.6;
@@ -78,7 +74,6 @@ export const InfoText = styled.p`
   color: #4a4a4a;
 `;
 
-// Nút yêu thích
 export const FavoriteButton = styled.button`
   background: none;
   border: none;
@@ -91,7 +86,6 @@ export const FavoriteButton = styled.button`
   }
 `;
 
-// Văn bản giá
 export const PriceText = styled.p`
   font-size: 1.6rem;
   font-weight: bold;
@@ -99,7 +93,6 @@ export const PriceText = styled.p`
   margin: 1rem 0;
 `;
 
-// Wrapper cho icon
 export const IconWrapper = styled.span`
   margin-right: 0.5rem;
   color: #007bff;

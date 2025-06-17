@@ -32,10 +32,31 @@ const RoomBookingForm = ({ onClose }) => {
     fetchPostDetails();
   }, [id]);
 
+  // THÊM HÀM VALIDATE DATE
+  const isDateDisabled = (date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day
+    return date < today;
+  };
+
+  // THÊM MIN DATE (từ hôm nay)
+  const minDate = new Date();
+
   const handleBooking = async (e) => {
     e.preventDefault();
     if (!date || !time) {
       alert("Vui lòng chọn ngày và giờ");
+      return;
+    }
+
+    // THÊM VALIDATION CHO NGÀY QUÁ KHỨ
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(date);
+    selectedDate.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      alert("Không thể đặt lịch cho ngày trong quá khứ!");
       return;
     }
 
@@ -79,22 +100,48 @@ const RoomBookingForm = ({ onClose }) => {
           selected={date}
           onChange={(date) => setDate(date)}
           dateFormat="dd/MM/yyyy"
-          placeholderText="Chọn ngày"
+          placeholderText="Chọn ngày (từ hôm nay)"
           customInput={<input style={inputStyle} />}
+          minDate={minDate} // KHÔNG CHO CHỌN NGÀY QUÁ KHỨ
+          filterDate={(date) => !isDateDisabled(date)} // THÊM FILTER
         />
+        
         <select
           value={time}
           onChange={(e) => setTime(e.target.value)}
           style={inputStyle}
         >
           <option value="">Chọn giờ</option>
-          <option value="09:00">09:00</option>
-          <option value="10:00">10:00</option>
-          <option value="11:00">11:00</option>
-          <option value="14:00">14:00</option>
-          <option value="15:00">15:00</option>
-          <option value="16:00">16:00</option>
+          {/* SÁNG */}
+          <option value="08:00">08:00 - Sáng</option>
+          <option value="08:30">08:30 - Sáng</option>
+          <option value="09:00">09:00 - Sáng</option>
+          <option value="09:30">09:30 - Sáng</option>
+          <option value="10:00">10:00 - Sáng</option>
+          <option value="10:30">10:30 - Sáng</option>
+          <option value="11:00">11:00 - Sáng</option>
+          <option value="11:30">11:30 - Sáng</option>
+          
+          {/* CHIỀU */}
+          <option value="13:00">13:00 - Chiều</option>
+          <option value="13:30">13:30 - Chiều</option>
+          <option value="14:00">14:00 - Chiều</option>
+          <option value="14:30">14:30 - Chiều</option>
+          <option value="15:00">15:00 - Chiều</option>
+          <option value="15:30">15:30 - Chiều</option>
+          <option value="16:00">16:00 - Chiều</option>
+          <option value="16:30">16:30 - Chiều</option>
+          <option value="17:00">17:00 - Chiều</option>
+          <option value="17:30">17:30 - Chiều</option>
+          
+          {/* TỐI */}
+          <option value="18:00">18:00 - Tối</option>
+          <option value="18:30">18:30 - Tối</option>
+          <option value="19:00">19:00 - Tối</option>
+          <option value="19:30">19:30 - Tối</option>
+          <option value="20:00">20:00 - Tối</option>
         </select>
+        
         <button type="submit" style={buttonStyle}>
           Đặt Lịch
         </button>
@@ -102,6 +149,8 @@ const RoomBookingForm = ({ onClose }) => {
     </div>
   );
 };
+
+// ... existing styles ...
 
 const containerStyle = {
   maxWidth: "400px",
