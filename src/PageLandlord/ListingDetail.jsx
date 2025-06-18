@@ -1,4 +1,6 @@
-import React, { useEffect, useState, useCallback } from "react";
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
 import {
   Edit2,
   Trash2,
@@ -10,17 +12,16 @@ import {
   Droplet,
   Globe,
   Sparkles,
-  Star,
   Eye,
   MapPin,
   Home,
   Square,
   ArrowUpDown,
   X,
-  Save,
-  ArrowLeft,
   Calendar,
-  Users,
+  AlertCircle,
+  Plus,
+  Info,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import {
@@ -30,10 +31,10 @@ import {
 } from "../api/post";
 import { updateAcceptRequest } from "../api/request";
 import { updateDeclineRequest } from "../api/request";
-import { getUserById } from "../api/users";
 import { Link } from "react-router-dom";
 import BookingModal from "./formBooking";
 import { getRequestByPostId } from "../api/request";
+
 export default function ListingDetailLandlord() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,21 +42,51 @@ export default function ListingDetailLandlord() {
   const [selectedListingId, setSelectedListingId] = useState(null);
   const [editingListingId, setEditingListingId] = useState(null);
   const { user } = useAuth();
-  const [notification, setNotification] = useState(null);
+  const [notifications, setNotifications] = useState({});
   const [updateTrigger, setUpdateTrigger] = useState(0);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [bookingRequests, setBookingRequests] = useState([]);
+  const [bookingCounts, setBookingCounts] = useState({});
+  const [pendingBookings, setPendingBookings] = useState({});
+
   useEffect(() => {
     const fetchListings = async () => {
-      if (!user || !user.id) return;
+      if (!user?.id) return;
 
       try {
         setLoading(true);
         const response = await getPostByIdLandlord(user.id);
-        const update = response.data;
-        setListings(response.data);
-        console.log(response.data);
+        const listingsData = response.data;
+        setListings(listingsData);
+
+        const counts = {};
+        const pendingStatus = {};
+
+        for (const listing of listingsData) {
+          try {
+            const bookingResponse = await getRequestByPostId(listing._id);
+            const requests = Array.isArray(bookingResponse)
+              ? bookingResponse
+              : bookingResponse.data || [];
+
+            counts[listing._id] = requests.length;
+            pendingStatus[listing._id] = requests.some(
+              (request) =>
+                request.status && request.status.toLowerCase() === "pending"
+            );
+          } catch (error) {
+            console.error(
+              `Error fetching bookings for listing ${listing._id}:`,
+              error
+            );
+            counts[listing._id] = 0;
+            pendingStatus[listing._id] = false;
+          }
+        }
+
+        setBookingCounts(counts);
+        setPendingBookings(pendingStatus);
       } catch (error) {
         console.error("Không thể tải danh sách bài đăng", error);
       } finally {
@@ -66,9 +97,43 @@ export default function ListingDetailLandlord() {
     fetchListings();
   }, [user?.id, updateTrigger]);
 
-  const handleDelete = (id) => {
-    setSelectedListingId(id);
-    setDeleteModalOpen(true);
+  const handleDelete = async (id) => {
+    try {
+      const bookingResponse = await getRequestByPostId(id);
+      const requests = Array.isArray(bookingResponse)
+        ? bookingResponse
+        : bookingResponse.data || [];
+
+      const hasPendingBooking = requests.some((request) => {
+        return request.status && request.status.toLowerCase() === "pending";
+      });
+
+      if (hasPendingBooking) {
+        setNotifications((prev) => ({
+          ...prev,
+          [id]: {
+            type: "error",
+            message:
+              "❌ Không thể xóa bài đăng này vì có lịch đặt đang chờ xử lý! Vui lòng xử lý tất cả lịch đặt trước khi xóa.",
+          },
+        }));
+        setTimeout(() => {
+          setNotifications((prev) => {
+            const newNotifications = { ...prev };
+            delete newNotifications[id];
+            return newNotifications;
+          });
+        }, 5000);
+        return;
+      }
+
+      setSelectedListingId(id);
+      setDeleteModalOpen(true);
+    } catch (error) {
+      console.error("Error checking bookings:", error);
+      setSelectedListingId(id);
+      setDeleteModalOpen(true);
+    }
   };
 
   const confirmDelete = async () => {
@@ -81,47 +146,159 @@ export default function ListingDetailLandlord() {
       );
       setDeleteModalOpen(false);
       setSelectedListingId(null);
-      console.log("Bài đăng đã được xóa thành công");
+
+      setBookingCounts((prev) => {
+        const newCounts = { ...prev };
+        delete newCounts[selectedListingId];
+        return newCounts;
+      });
+
+      setPendingBookings((prev) => {
+        const newPending = { ...prev };
+        delete newPending[selectedListingId];
+        return newPending;
+      });
+
+      setNotifications((prev) => ({
+        ...prev,
+        [selectedListingId]: {
+          type: "success",
+          message: "✅ Bài đăng đã được xóa thành công!",
+        },
+      }));
+      setTimeout(() => {
+        setNotifications((prev) => {
+          const newNotifications = { ...prev };
+          delete newNotifications[selectedListingId];
+          return newNotifications;
+        });
+      }, 3000);
     } catch (error) {
       console.error("Không thể xóa bài đăng", error);
+      setNotifications((prev) => ({
+        ...prev,
+        [selectedListingId]: {
+          type: "error",
+          message: "❌ Không thể xóa bài đăng. Vui lòng thử lại!",
+        },
+      }));
+      setTimeout(() => {
+        setNotifications((prev) => {
+          const newNotifications = { ...prev };
+          delete newNotifications[selectedListingId];
+          return newNotifications;
+        });
+      }, 3000);
+      setDeleteModalOpen(false);
+      setSelectedListingId(null);
     }
   };
 
   const handleEdit = (id) => {
     setEditingListingId(id);
   };
+
   const handleSave = useCallback(async (formData) => {
-    console.log("Dữ liệu nhận được trong handleSave:", formData);
+    console.log("=== HANDLE SAVE DEBUG ===");
+
+    // Debug formData
+    console.log("FormData received in handleSave:");
+    for (const [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(
+          `${key}: File - ${value.name} (${value.type}, ${value.size} bytes)`
+        );
+      } else {
+        console.log(`${key}: ${value}`);
+      }
+    }
 
     try {
       const id = formData.get("_id");
-      console.log("ID của bài đăng cần cập nhật:", id);
+      console.log("Updating post with ID:", id);
 
       if (!id) {
-        console.error("Dữ liệu không hợp lệ: Thiếu ID bài đăng.");
-        setNotification("Không thể cập nhật bài đăng vì thiếu ID.");
+        setNotifications((prev) => ({
+          ...prev,
+          [id]: {
+            type: "error",
+            message: "❌ Không thể cập nhật bài đăng vì thiếu ID.",
+          },
+        }));
         return;
       }
 
+      console.log("Calling updatePostById API...");
       const response = await updatePostById(id, formData);
+      console.log("API Response:", response);
 
-      if (response && response.data) {
-        setListings((prevListings) =>
-          prevListings.map((listing) =>
-            listing._id === id ? { ...listing, ...response.data } : listing
-          )
-        );
+      if (response && response.data && response.data.post) {
+        const updatedPost = response.data.post;
+        console.log("Updated post received:", updatedPost);
+        console.log("Updated post images count:", updatedPost.images?.length);
+
+        // Force update listings state
+        setListings((prevListings) => {
+          console.log("=== STATE UPDATE DEBUG ===");
+          console.log("Previous listings count:", prevListings.length);
+
+          const newListings = prevListings.map((listing) => {
+            if (listing._id === id) {
+              console.log("Found listing to update:", listing._id);
+              console.log("Old images count:", listing.images?.length);
+              console.log("New images count:", updatedPost.images?.length);
+              return { ...updatedPost }; // Spread to ensure new object reference
+            }
+            return listing;
+          });
+
+          console.log("New listings created");
+          return newListings;
+        });
+
+        // Close edit modal
         setEditingListingId(null);
-        setNotification("Cập nhật bài đăng thành công!");
-        setUpdateTrigger((prev) => prev + 1);
+
+        // Show success notification
+        setNotifications((prev) => ({
+          ...prev,
+          [id]: {
+            type: "success",
+            message: "✅ Cập nhật bài đăng thành công! Ảnh đã được thêm.",
+          },
+        }));
+
+        // Force re-fetch data to ensure consistency
+        setTimeout(() => {
+          setUpdateTrigger((prev) => prev + 1);
+        }, 1000);
       } else {
+        console.error("Invalid response structure:", response);
         throw new Error("Không nhận được dữ liệu từ server sau khi cập nhật");
       }
     } catch (error) {
       console.error("Lỗi khi cập nhật bài đăng:", error);
-      setNotification("Cập nhật bài đăng thất bại. Vui lòng thử lại!");
+      console.error("Error details:", error.response?.data || error.message);
+
+      const listingId = formData.get("_id");
+      setNotifications((prev) => ({
+        ...prev,
+        [listingId]: {
+          type: "error",
+          message: `❌ Cập nhật bài đăng thất bại: ${
+            error.response?.data?.msg || error.message
+          }`,
+        },
+      }));
     } finally {
-      setTimeout(() => setNotification(null), 3000);
+      const listingId = formData.get("_id");
+      setTimeout(() => {
+        setNotifications((prev) => {
+          const newNotifications = { ...prev };
+          delete newNotifications[listingId];
+          return newNotifications;
+        });
+      }, 5000);
     }
   }, []);
 
@@ -132,68 +309,150 @@ export default function ListingDetailLandlord() {
       </div>
     );
   }
+
   const handleViewBooking = async (listing) => {
     try {
-      // Lấy yêu cầu đặt phòng từ API
       const response = await getRequestByPostId(listing._id);
-      console.log("API Response:", response); // Debug log
-
       const requests = Array.isArray(response) ? response : response.data;
-      console.log("Booking Requests:", requests); // Debug log
 
       setSelectedBooking({
+        _id: listing._id,
         title: listing.title,
         address: `${listing.location.address}, ${listing.location.ward}, ${listing.location.district}, ${listing.location.city}`,
       });
 
-      // Cập nhật yêu cầu
       setBookingRequests(requests);
-
-      // Mở modal
       setIsBookingModalOpen(true);
     } catch (error) {
       console.error("Error fetching booking requests:", error);
-      setNotification("Failed to fetch booking requests. Please try again.");
+      setNotifications((prev) => ({
+        ...prev,
+        [listing._id]: {
+          type: "error",
+          message: "❌ Không thể tải danh sách lịch đặt. Vui lòng thử lại.",
+        },
+      }));
     }
   };
 
   const handleAcceptBooking = async (requestId) => {
     try {
       await updateAcceptRequest(requestId);
-      setNotification("Đã chấp nhận đặt phòng thành công");
-      setIsBookingModalOpen(false);
+      setNotifications((prev) => ({
+        ...prev,
+        [selectedBooking._id]: {
+          type: "success",
+          message: "✅ Đã chấp nhận đặt phòng thành công",
+        },
+      }));
+
       if (selectedBooking && selectedBooking._id) {
         const updatedRequests = await getRequestByPostId(selectedBooking._id);
-        setBookingRequests(updatedRequests);
+        const requests = Array.isArray(updatedRequests)
+          ? updatedRequests
+          : updatedRequests.data || [];
+        setBookingRequests(requests);
+
+        setBookingCounts((prev) => ({
+          ...prev,
+          [selectedBooking._id]: requests.length,
+        }));
+
+        setPendingBookings((prev) => ({
+          ...prev,
+          [selectedBooking._id]: requests.some(
+            (request) =>
+              request.status && request.status.toLowerCase() === "pending"
+          ),
+        }));
       }
+
+      setTimeout(() => {
+        setNotifications((prev) => {
+          const newNotifications = { ...prev };
+          delete newNotifications[selectedBooking._id];
+          return newNotifications;
+        });
+      }, 3000);
     } catch (error) {
       console.error("Lỗi khi chấp nhận đặt phòng:", error);
+      setNotifications((prev) => ({
+        ...prev,
+        [selectedBooking._id]: {
+          type: "error",
+          message: "❌ Không thể chấp nhận đặt phòng. Vui lòng thử lại!",
+        },
+      }));
+      setTimeout(() => {
+        setNotifications((prev) => {
+          const newNotifications = { ...prev };
+          delete newNotifications[selectedBooking._id];
+          return newNotifications;
+        });
+      }, 3000);
     }
   };
 
   const handleRejectBooking = async (requestId) => {
     try {
       await updateDeclineRequest(requestId);
-      setNotification("Đã từ chối đặt phòng thành công");
-      setIsBookingModalOpen(false);
-      // Refresh the booking requests
+      setNotifications((prev) => ({
+        ...prev,
+        [selectedBooking._id]: {
+          type: "success",
+          message: "✅ Đã từ chối đặt phòng thành công",
+        },
+      }));
+
       if (selectedBooking && selectedBooking._id) {
         const updatedRequests = await getRequestByPostId(selectedBooking._id);
-        setBookingRequests(updatedRequests);
+        const requests = Array.isArray(updatedRequests)
+          ? updatedRequests
+          : updatedRequests.data || [];
+        setBookingRequests(requests);
+
+        setBookingCounts((prev) => ({
+          ...prev,
+          [selectedBooking._id]: requests.length,
+        }));
+
+        setPendingBookings((prev) => ({
+          ...prev,
+          [selectedBooking._id]: requests.some(
+            (request) =>
+              request.status && request.status.toLowerCase() === "pending"
+          ),
+        }));
       }
+
+      setTimeout(() => {
+        setNotifications((prev) => {
+          const newNotifications = { ...prev };
+          delete newNotifications[selectedBooking._id];
+          return newNotifications;
+        });
+      }, 3000);
     } catch (error) {
       console.error("Lỗi khi từ chối đặt phòng:", error);
-      setNotification("Không thể từ chối đặt phòng. Vui lòng thử lại!");
+      setNotifications((prev) => ({
+        ...prev,
+        [selectedBooking._id]: {
+          type: "error",
+          message: "❌ Không thể từ chối đặt phòng. Vui lòng thử lại!",
+        },
+      }));
+      setTimeout(() => {
+        setNotifications((prev) => {
+          const newNotifications = { ...prev };
+          delete newNotifications[selectedBooking._id];
+          return newNotifications;
+        });
+      }, 3000);
     }
   };
 
   return (
     <div className="container mx-auto px-4 py-8 bg-gray-50">
-      {notification && (
-        <div className="mb-4 p-4 bg-green-100 text-green-700 rounded-lg shadow-md">
-          {notification}
-        </div>
-      )}
       <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">
         Danh sách bài đăng của bạn
       </h1>
@@ -208,7 +467,8 @@ export default function ListingDetailLandlord() {
                 <img
                   src={
                     listing.images[0]?.url ||
-                    "/placeholder.svg?height=200&width=300"
+                    "/placeholder.svg?height=200&width=300" ||
+                    "/placeholder.svg"
                   }
                   alt={listing.title}
                   className="w-full h-56 object-cover"
@@ -217,6 +477,12 @@ export default function ListingDetailLandlord() {
               <div className="absolute top-0 left-0 bg-blue-600 text-white px-3 py-1 m-4 rounded-full text-sm font-semibold">
                 {listing.status}
               </div>
+              {pendingBookings[listing._id] && (
+                <div className="absolute top-0 right-0 bg-orange-500 text-white px-2 py-1 m-4 rounded-full text-xs font-semibold flex items-center">
+                  <AlertCircle className="w-3 h-3 mr-1" />
+                  Có lịch đặt
+                </div>
+              )}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
                 <h2 className="text-2xl font-bold text-white mb-1">
                   {listing.title}
@@ -227,6 +493,24 @@ export default function ListingDetailLandlord() {
               </div>
             </div>
             <div className="p-6">
+              {notifications[listing._id] && (
+                <div
+                  className={`mb-4 p-3 rounded-lg text-sm ${
+                    notifications[listing._id].type === "success"
+                      ? "bg-green-100 text-green-700 border border-green-200"
+                      : "bg-red-100 text-red-700 border border-red-200"
+                  }`}
+                >
+                  <div className="flex items-center">
+                    {notifications[listing._id].type === "success" ? (
+                      <div className="w-4 h-4 mr-2 text-green-500">✓</div>
+                    ) : (
+                      <AlertCircle className="w-4 h-4 mr-2" />
+                    )}
+                    {notifications[listing._id].message}
+                  </div>
+                </div>
+              )}
               <div className="flex justify-between items-center mb-4">
                 <span className="text-3xl font-bold text-blue-600">
                   {listing.price.toLocaleString()} VND
@@ -317,10 +601,15 @@ export default function ListingDetailLandlord() {
               <div className="flex justify-between items-center mt-4">
                 <button
                   onClick={() => handleViewBooking(listing)}
-                  className="flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+                  className="relative flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
                 >
                   <Calendar className="w-5 h-5 mr-2" />
                   Xem lịch đặt
+                  {bookingCounts[listing._id] > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse">
+                      {bookingCounts[listing._id]}
+                    </span>
+                  )}
                 </button>
                 <div className="flex space-x-2">
                   <button
@@ -332,10 +621,22 @@ export default function ListingDetailLandlord() {
                   </button>
                   <button
                     onClick={() => handleDelete(listing._id)}
-                    className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+                    className={`p-2 rounded-full transition-colors relative ${
+                      pendingBookings[listing._id]
+                        ? "bg-gray-400 text-gray-600 cursor-not-allowed opacity-50"
+                        : "bg-red-600 text-white hover:bg-red-700"
+                    }`}
                     aria-label="Xóa bài đăng"
+                    title={
+                      pendingBookings[listing._id]
+                        ? "Không thể xóa vì có lịch đặt đang chờ xử lý"
+                        : "Xóa bài đăng"
+                    }
                   >
                     <Trash2 className="w-5 h-5" />
+                    {pendingBookings[listing._id] && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+                    )}
                   </button>
                 </div>
               </div>
@@ -350,20 +651,24 @@ export default function ListingDetailLandlord() {
               Xác nhận xóa
             </h2>
             <p className="mb-6 text-gray-600">
-              Bạn có chắc chắn muốn xóa bài đăng này không?
+              Bạn có chắc chắn muốn xóa bài đăng này không? Hành động này không
+              thể hoàn tác.
             </p>
             <div className="flex justify-end space-x-4">
               <button
-                onClick={() => setDeleteModalOpen(false)}
+                onClick={() => {
+                  setDeleteModalOpen(false);
+                  setSelectedListingId(null);
+                }}
                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
               >
                 Hủy
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
               >
-                Xóa
+                Xóa bài đăng
               </button>
             </div>
           </div>
@@ -393,13 +698,15 @@ export default function ListingDetailLandlord() {
 function EditForm({ listing, onSave, onCancel }) {
   const [editedListing, setEditedListing] = useState(listing);
   const [newImages, setNewImages] = useState([]);
+  const [showImageInfo, setShowImageInfo] = useState(false);
+
   useEffect(() => {
-    // Đảm bảo _id luôn được giữ nguyên
     setEditedListing((prevState) => ({
       ...prevState,
       _id: listing._id,
     }));
   }, [listing]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditedListing((prev) => ({ ...prev, [name]: value }));
@@ -420,17 +727,53 @@ function EditForm({ listing, onSave, onCancel }) {
   };
 
   const handleImageUpload = useCallback((e) => {
+    console.log("=== IMAGE UPLOAD DEBUG ===");
+    console.log("Event target:", e.target);
+    console.log("Files:", e.target.files);
+
     const files = Array.from(e.target.files);
-    setNewImages((prevImages) => [...prevImages, ...files]);
+    console.log("Files array:", files);
+    console.log("Files count:", files.length);
+
+    if (files.length > 0) {
+      files.forEach((file, index) => {
+        console.log(`File ${index}:`, {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          lastModified: file.lastModified,
+        });
+      });
+
+      setNewImages((prevImages) => {
+        const updatedImages = [...prevImages, ...files];
+        console.log("Updated newImages:", updatedImages);
+        return updatedImages;
+      });
+    } else {
+      console.log("No files selected");
+    }
   }, []);
+
+  const handleRemoveNewImage = (indexToRemove) => {
+    setNewImages((prevImages) =>
+      prevImages.filter((_, index) => index !== indexToRemove)
+    );
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    console.log("=== DEBUG FORM SUBMIT ===");
+    console.log("New images count:", newImages.length);
+    console.log("New images:", newImages);
+
     const formData = new FormData();
 
+    // Thêm dữ liệu cơ bản (trừ images)
     Object.keys(editedListing).forEach((key) => {
       if (key === "images") {
-        return;
+        return; // Bỏ qua images, xử lý riêng
       }
       if (typeof editedListing[key] === "object") {
         formData.append(key, JSON.stringify(editedListing[key]));
@@ -439,17 +782,32 @@ function EditForm({ listing, onSave, onCancel }) {
       }
     });
 
-    editedListing.images.forEach((image, index) => {
-      if (image && image._id) {
-        formData.append(`existingImages[${index}]`, JSON.stringify(image));
+    // Thêm ảnh mới - sử dụng đúng field name mà backend expect
+    if (newImages.length > 0) {
+      console.log("Adding images to formData...");
+      newImages.forEach((file, index) => {
+        console.log(`Adding image ${index}:`, file.name, file.type, file.size);
+        formData.append("images", file); // Backend expect field name "images"
+      });
+    }
+
+    // Debug: Log tất cả entries trong formData
+    console.log("=== FORMDATA ENTRIES ===");
+    for (const [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(
+          `${key}: File - ${value.name} (${value.type}, ${value.size} bytes)`
+        );
+      } else {
+        console.log(`${key}: ${value}`);
       }
-    });
+    }
 
-    newImages.forEach((file, index) => {
-      formData.append(`newImages[${index}]`, file);
-    });
-
-    onSave(formData);
+    try {
+      await onSave(formData);
+    } catch (error) {
+      console.error("Error in handleSubmit:", error);
+    }
   };
 
   return (
@@ -681,7 +1039,7 @@ function EditForm({ listing, onSave, onCancel }) {
                             ...prev,
                             additionalCosts: {
                               ...prev.additionalCosts,
-                              [cost]: parseInt(e.target.value),
+                              [cost]: Number.parseInt(e.target.value),
                             },
                           }))
                         }
@@ -691,89 +1049,183 @@ function EditForm({ listing, onSave, onCancel }) {
                   ))}
                 </div>
               </div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ảnh và Video
-              </label>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                {editedListing.images.map((image, index) => (
-                  <div key={index} className="relative">
-                    {image &&
-                    image.url &&
-                    typeof image.url === "string" &&
-                    image.url.toLowerCase().endsWith(".mp4") ? (
-                      <video
-                        src={image.url}
-                        className="w-full h-48 object-cover rounded-md"
-                        controls
-                      />
-                    ) : (
-                      <img
-                        src={
-                          image && image.url
-                            ? image.url
-                            : "/placeholder.svg?height=200&width=300"
-                        }
-                        alt={`Image ${index + 1}`}
-                        className="w-full h-48 object-cover rounded-md"
-                      />
-                    )}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setEditedListing((prev) => ({
-                          ...prev,
-                          images: prev.images.filter((_, i) => i !== index),
-                        }))
-                      }
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+
+              {/* Phần quản lý ảnh được cải thiện */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Quản lý ảnh
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowImageInfo(!showImageInfo)}
+                    className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
+                  >
+                    <Info className="w-4 h-4 mr-1" />
+                    Thông tin
+                  </button>
+                </div>
+
+                {/* Thông báo hướng dẫn */}
+                {showImageInfo && (
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+                    <div className="flex items-start">
+                      <Info className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium mb-1">
+                          Lưu ý về quản lý ảnh:
+                        </p>
+                        <ul className="list-disc list-inside space-y-1 text-xs">
+                          <li>Ảnh hiện tại sẽ được giữ nguyên</li>
+                          <li>Bạn chỉ có thể thêm ảnh mới vào bài đăng</li>
+                          <li>
+                            Tính năng xóa ảnh cũ sẽ được cập nhật trong phiên
+                            bản tiếp theo
+                          </li>
+                          <li>Ảnh mới sẽ được thêm vào cuối danh sách</li>
+                        </ul>
+                      </div>
+                    </div>
                   </div>
-                ))}
-                {newImages.map((file, index) => (
-                  <div key={`new-${index}`} className="relative">
-                    <img
-                      src={URL.createObjectURL(file)}
-                      alt={`New Image ${index + 1}`}
-                      className="w-full h-48 object-cover rounded-md"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setNewImages((prevImages) =>
-                          prevImages.filter((_, i) => i !== index)
-                        )
-                      }
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                )}
+
+                {/* Hiển thị ảnh hiện tại */}
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-600 mb-2">
+                    Ảnh hiện tại ({editedListing.images?.length || 0} ảnh)
+                  </h4>
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    {editedListing.images?.map((image, index) => (
+                      <div key={`existing-${index}`} className="relative group">
+                        {image &&
+                        image.url &&
+                        typeof image.url === "string" &&
+                        image.url.toLowerCase().endsWith(".mp4") ? (
+                          <video
+                            src={image.url}
+                            className="w-full h-24 object-cover rounded-md"
+                            controls
+                          />
+                        ) : (
+                          <img
+                            src={
+                              image && image.url
+                                ? image.url
+                                : "/placeholder.svg?height=100&width=100"
+                            }
+                            alt={`Ảnh ${index + 1}`}
+                            className="w-full h-24 object-cover rounded-md"
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
+                          <span className="text-white text-xs font-medium">
+                            Ảnh cũ
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                {/* Hiển thị ảnh mới sẽ thêm */}
+                {newImages.length > 0 && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-green-600 mb-2">
+                      Ảnh mới sẽ thêm ({newImages.length} ảnh)
+                    </h4>
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      {newImages.map((file, index) => (
+                        <div key={`new-${index}`} className="relative group">
+                          <img
+                            src={
+                              URL.createObjectURL(file) || "/placeholder.svg"
+                            }
+                            alt={`Ảnh mới ${index + 1}`}
+                            className="w-full h-24 object-cover rounded-md border-2 border-green-300"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveNewImage(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          <div className="absolute bottom-1 left-1 bg-green-500 text-white px-1 py-0.5 rounded text-xs font-medium">
+                            Mới
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Input thêm ảnh mới */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    id="imageUpload"
+                    key={newImages.length} // Force re-render when images change
+                  />
+                  <label
+                    htmlFor="imageUpload"
+                    className="cursor-pointer flex flex-col items-center"
+                  >
+                    <Plus className="w-8 h-8 text-gray-400 mb-2" />
+                    <span className="text-sm text-gray-600 font-medium">
+                      Thêm ảnh mới
+                    </span>
+                    <span className="text-xs text-gray-400 mt-1">
+                      Chọn nhiều ảnh cùng lúc (JPG, PNG, MP4)
+                    </span>
+                  </label>
+
+                  {/* Debug info */}
+                  {newImages.length > 0 && (
+                    <div className="mt-2 text-xs text-green-600">
+                      ✓ Đã chọn {newImages.length} file
+                    </div>
+                  )}
+                </div>
+
+                {/* Alternative: Direct file input (for testing) */}
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Hoặc chọn file trực tiếp (để test):
+                  </label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={handleImageUpload}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
               </div>
-              <input
-                type="file"
-                multiple
-                accept="image/*,video/*"
-                onChange={handleImageUpload}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
             </div>
           </div>
-          <div className="flex justify-end space-x-4 mt-8">
+
+          <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
             <button
               type="button"
               onClick={onCancel}
               className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all"
             >
-              Hủy
+              Hủy bỏ
             </button>
             <button
               type="submit"
-              className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all"
+              className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all flex items-center"
             >
-              Lưu
+              <span>Lưu thay đổi</span>
+              {newImages.length > 0 && (
+                <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                  +{newImages.length} ảnh
+                </span>
+              )}
             </button>
           </div>
         </form>

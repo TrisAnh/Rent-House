@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { MdNotifications, MdMenu, MdClose } from "react-icons/md";
 import { getNotification } from "../../api/notifications";
-import "./Header.css"; 
+import "./Header.css";
 const HeaderReponsive = () => {
   const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -17,18 +17,18 @@ const HeaderReponsive = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const response = await getNotification(user.id); 
+        const response = await getNotification(user.id);
         console.log("Dữ liệu thông báo:", response.data);
-        setNotifications(response.data); 
+        setNotifications(response.data);
       } catch (error) {
         console.error("Error fetching notifications:", error);
       }
     };
 
     if (user) {
-      fetchNotifications(); 
+      fetchNotifications();
     }
-  }, [user]); 
+  }, [user]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -241,7 +241,14 @@ const HeaderReponsive = () => {
               className="mobile-link"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Đặt lịch
+              Đăng ký nhận tin
+            </Link>
+            <Link
+              to="/alert"
+              className="mobile-link"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Đăng ký nhận tin
             </Link>
           </div>
         </div>
@@ -278,6 +285,13 @@ const HeaderReponsive = () => {
           <li className="navbar-item">
             <Link to="/inforbooking" className="nav-link">
               Đặt lịch
+            </Link>
+            <Link
+              to="/alert"
+              className="mobile-link"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Đăng ký nhận tin
             </Link>
           </li>
         </ul>

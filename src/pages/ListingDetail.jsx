@@ -36,7 +36,6 @@ import {
   FaTimes,
   FaComment,
   FaCalendarAlt,
-  FaShareAlt,
   FaCheck,
   FaRuler,
   FaBuilding,
@@ -52,7 +51,6 @@ import {
   FaNetworkWired,
   FaRegCalendarAlt,
   FaPhoneAlt,
-  FaExternalLinkAlt,
   FaAngleRight,
   FaAngleDown,
   FaAngleUp,
@@ -65,10 +63,13 @@ import {
   FaExclamationCircle,
   FaMoneyBillWave as FaMoneyBill,
   FaUserCircle as FaUserCircleIcon,
-  FaFacebook,
 } from "react-icons/fa";
 import Map from "./Map";
-import { createFavourite, removeFavourite, getFavorites} from "../api/favourites";
+import {
+  createFavourite,
+  removeFavourite,
+  getFavorites,
+} from "../api/favourites";
 
 const ListingDetail = () => {
   const { id } = useParams();
@@ -92,6 +93,28 @@ const ListingDetail = () => {
   const [copied, setCopied] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
 
+  // Thay thế hàm getViewedPostsKey và handleViewCount bằng:
+  const handleViewCount = async () => {
+    const now = Date.now();
+    const lastViewKey = `lastView_${id}`;
+    const lastViewTime = sessionStorage.getItem(lastViewKey);
+
+    // Nếu truy cập trong vòng 3 giây thì coi là refresh (F5)
+    if (lastViewTime && now - Number.parseInt(lastViewTime) < 3000) {
+      console.log("Detected refresh - không tăng view");
+      return;
+    }
+
+    try {
+      await incrementViewCount(id);
+      // Lưu timestamp của lần view này
+      sessionStorage.setItem(lastViewKey, now.toString());
+      console.log(`View count increased for post ${id}`);
+    } catch (error) {
+      console.error("Error incrementing view count:", error);
+    }
+  };
+
   useEffect(() => {
     const fetchListing = async () => {
       try {
@@ -103,7 +126,9 @@ const ListingDetail = () => {
           );
           setLandlord(landlordResponse.data);
         }
-        await incrementViewCount(id);
+
+        // Tăng view count sau khi fetch thành công (không phụ thuộc user)
+        await handleViewCount();
       } catch (err) {
         setError(err.message);
       } finally {
@@ -126,18 +151,18 @@ const ListingDetail = () => {
     }
 
     window.scrollTo(0, 0);
-  }, [id]);
+  }, [id]); // Chỉ dependency là id, bỏ user
 
   useEffect(() => {
     const checkFavoriteStatus = async () => {
-      if (!user || !id) return; 
-      
+      if (!user || !id) return;
+
       try {
         const response = await getFavorites();
         const favorites = response.data || [];
-        
-        const favoriteItem = favorites.find(fav => fav.id_post._id === id);
-        
+
+        const favoriteItem = favorites.find((fav) => fav.id_post._id === id);
+
         if (favoriteItem) {
           setIsFavorited(true);
           setIdFavorite(favoriteItem._id);
@@ -153,7 +178,7 @@ const ListingDetail = () => {
     };
 
     checkFavoriteStatus();
-  }, [user, id]); // Chạy lại khi user hoặc id thay đổi
+  }, [user, id]);
 
   const toggleFavorite = async () => {
     if (!user) {
@@ -206,7 +231,9 @@ const ListingDetail = () => {
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <div className="flex items-center justify-center mb-3">
             <FaLock className="text-yellow-500 mr-2" size={24} />
-            <span className="font-medium text-gray-700">Thông tin được bảo vệ</span>
+            <span className="font-medium text-gray-700">
+              Thông tin được bảo vệ
+            </span>
           </div>
           <div className="space-y-3">
             <div className="flex items-center p-3 bg-gray-100 rounded-lg">
@@ -258,7 +285,7 @@ const ListingDetail = () => {
     const numPrice = Number(price);
     if (isNaN(numPrice)) return "Chưa cập nhật";
 
-    return numPrice.toLocaleString('vi-VN') + " VNĐ";
+    return numPrice.toLocaleString("vi-VN") + " VNĐ";
   };
 
   const nextImage = () => {
@@ -413,7 +440,7 @@ const ListingDetail = () => {
                     {listing.averageRating || "5.0"}
                   </span>
                   <span className="text-gray-500 text-xs ml-1">
-                    ({listing.views || 0}  lượt xem)
+                    ({listing.views || 0} lượt xem)
                   </span>
                 </div>
               </div>
@@ -421,10 +448,11 @@ const ListingDetail = () => {
                 <InfoItem
                   icon={FaDollarSign}
                   label="Giá thuê"
-                  value={`${listing.price
-                    ? listing.price.toLocaleString()
-                    : "Chưa có giá"
-                    } VND/tháng`}
+                  value={`${
+                    listing.price
+                      ? listing.price.toLocaleString()
+                      : "Chưa có giá"
+                  } VND/tháng`}
                   highlight={true}
                 />
                 <InfoItem
@@ -563,7 +591,9 @@ const ListingDetail = () => {
                 <InfoItem
                   icon={FaBolt}
                   label="Điện"
-                  value={`${formatPrice(listing.additionalCosts?.electricity || 0)} VND/kWh`}
+                  value={`${formatPrice(
+                    listing.additionalCosts?.electricity || 0
+                  )} VND/kWh`}
                 />
                 <InfoItem
                   icon={FaTint}
@@ -573,12 +603,16 @@ const ListingDetail = () => {
                 <InfoItem
                   icon={FaWifi}
                   label="Internet"
-                  value={`${listing.additionalCosts?.internet || 0} VND/tháng`}
+                  value={`${formatPrice(
+                    listing.additionalCosts?.internet || 0
+                  )} VND/tháng`}
                 />
                 <InfoItem
                   icon={FaBroom}
                   label="Dọn dẹp"
-                  value={`${listing.additionalCosts?.cleaning || 0} VND/tháng`}
+                  value={`${formatPrice(
+                    listing.additionalCosts?.cleaning || 0
+                  )} VND/tháng`}
                 />
               </div>
             </div>
@@ -592,8 +626,9 @@ const ListingDetail = () => {
             </h2>
             <div className="bg-white p-5 rounded-xl shadow-sm">
               <p
-                className={`text-gray-700 leading-relaxed whitespace-pre-line ${!showFullDescription && "line-clamp-6"
-                  }`}
+                className={`text-gray-700 leading-relaxed whitespace-pre-line ${
+                  !showFullDescription && "line-clamp-6"
+                }`}
               >
                 {listing.description}
               </p>
@@ -652,8 +687,9 @@ const ListingDetail = () => {
                     className="w-16 h-16 rounded-full object-cover border-2 border-indigo-100"
                   />
                   <div
-                    className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white ${isOnline ? "bg-green-500" : "bg-gray-400"
-                      }`}
+                    className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white ${
+                      isOnline ? "bg-green-500" : "bg-gray-400"
+                    }`}
                   ></div>
                 </div>
                 <div className="ml-4">
@@ -692,40 +728,53 @@ const ListingDetail = () => {
                 </div>
               </div>
               {user ? (
-                <div className="space-y-3">
-                  <button
-                    onClick={() => setShowBookingForm(true)}
-                    className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-300 font-semibold flex items-center justify-center"
-                  >
-                    <FaCalendarAlt className="mr-2" /> Đặt lịch xem phòng
-                  </button>
-                  <button
-                    onClick={() => {
-                      const phoneNumber = phone;
-                      if (phoneNumber) {
-                        window.open(`https://zalo.me/0364745239`, '_blank');
-                      } else {
-                        toast.error(
-                          "Số điện thoại của chủ trọ không khả dụng.",
-                          {
-                            icon: (
-                              <FaExclamationCircle className="text-red-500" />
-                            ),
-                          }
-                        );
-                      }
-                    }}
-                    className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition duration-300 font-semibold flex items-center justify-center"
-                  >
-                    <FaComment className="mr-2" /> Nhắn tin
-                  </button>
-                  <button
-                    onClick={handleReport}
-                    className="w-full bg-red-500 text-white py-3 px-4 rounded-lg hover:bg-red-600 transition duration-300 font-semibold flex items-center justify-center"
-                  >
-                    <FaFlag className="mr-2" /> Báo cáo tin đăng
-                  </button>
-                </div>
+                // Kiểm tra nếu user hiện tại là chủ trọ
+                user.id === listing.landlord._id ? (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-center">
+                      <FaInfoCircle className="text-blue-500 mr-3 flex-shrink-0" />
+                      <p className="text-blue-700 font-medium">
+                        Đây là bài đăng của bạn. Bạn không thể đặt lịch xem
+                        phòng cho chính mình.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => setShowBookingForm(true)}
+                      className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-300 font-semibold flex items-center justify-center"
+                    >
+                      <FaCalendarAlt className="mr-2" /> Đặt lịch xem phòng
+                    </button>
+                    <button
+                      onClick={() => {
+                        const phoneNumber = phone;
+                        if (phoneNumber) {
+                          window.open(`https://zalo.me/0364745239`, "_blank");
+                        } else {
+                          toast.error(
+                            "Số điện thoại của chủ trọ không khả dụng.",
+                            {
+                              icon: (
+                                <FaExclamationCircle className="text-red-500" />
+                              ),
+                            }
+                          );
+                        }
+                      }}
+                      className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition duration-300 font-semibold flex items-center justify-center"
+                    >
+                      <FaComment className="mr-2" /> Nhắn tin
+                    </button>
+                    <button
+                      onClick={handleReport}
+                      className="w-full bg-red-500 text-white py-3 px-4 rounded-lg hover:bg-red-600 transition duration-300 font-semibold flex items-center justify-center"
+                    >
+                      <FaFlag className="mr-2" /> Báo cáo tin đăng
+                    </button>
+                  </div>
+                )
               ) : (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <div className="flex items-start">
@@ -738,7 +787,8 @@ const ListingDetail = () => {
                       >
                         đăng nhập
                       </Link>{" "}
-                      để xem thông tin iên hệ, đặt lịch xem phòng hoặc báo cáo tin đăng này.
+                      để xem thông tin liên hệ, đặt lịch xem phòng hoặc báo cáo
+                      tin đăng này.
                     </p>
                   </div>
                 </div>
@@ -793,8 +843,9 @@ const ListingDetail = () => {
                 <div className="flex items-center space-x-3">
                   <button
                     onClick={toggleFavorite}
-                    className={`flex items-center ${isFavorited ? "text-red-500" : "text-gray-500"
-                      } hover:text-red-600 transition duration-300 bg-gray-50 px-3 py-2 rounded-lg`}
+                    className={`flex items-center ${
+                      isFavorited ? "text-red-500" : "text-gray-500"
+                    } hover:text-red-600 transition duration-300 bg-gray-50 px-3 py-2 rounded-lg`}
                     disabled={loadingFavorite}
                   >
                     {isFavorited ? (
@@ -806,7 +857,6 @@ const ListingDetail = () => {
                       {loadingFavorite ? "Đang xử lý..." : "Yêu thích"}
                     </span>
                   </button>
-
                 </div>
               </div>
 
@@ -828,9 +878,7 @@ const ListingDetail = () => {
                   <FaEye className="mr-1 text-indigo-500" />
                   <span>{listing.views || 0} lượt xem</span>
                 </div>
-                <div className="flex items-center mb-2">
-
-                </div>
+                <div className="flex items-center mb-2"></div>
               </div>
 
               {/* Image gallery */}
@@ -838,7 +886,14 @@ const ListingDetail = () => {
                 <img
                   src={
                     listing.images[currentImageIndex]?.url ||
-                    "/placeholder.svg?height=500&width=800"
+                    "/placeholder.svg?height=500&width=800" ||
+                    "/placeholder.svg" ||
+                    "/placeholder.svg" ||
+                    "/placeholder.svg" ||
+                    "/placeholder.svg" ||
+                    "/placeholder.svg" ||
+                    "/placeholder.svg" ||
+                    "/placeholder.svg"
                   }
                   alt={`Hình ảnh ${currentImageIndex + 1}`}
                   className="w-full h-64 sm:h-80 md:h-96 object-cover"
@@ -874,10 +929,11 @@ const ListingDetail = () => {
                     <button
                       key={index}
                       onClick={() => setCurrentImageIndex(index)}
-                      className={`flex-shrink-0 rounded-lg overflow-hidden ${currentImageIndex === index
-                        ? "ring-2 ring-indigo-500"
-                        : "opacity-70 hover:opacity-100 transition"
-                        }`}
+                      className={`flex-shrink-0 rounded-lg overflow-hidden ${
+                        currentImageIndex === index
+                          ? "ring-2 ring-indigo-500"
+                          : "opacity-70 hover:opacity-100 transition"
+                      }`}
                     >
                       <img
                         src={image.url || "/placeholder.svg?height=80&width=80"}
@@ -893,37 +949,41 @@ const ListingDetail = () => {
               <div className="flex overflow-x-auto mb-6 lg:hidden">
                 <button
                   onClick={() => setActiveTab("details")}
-                  className={`px-4 py-2 mr-2 rounded-lg text-sm whitespace-nowrap flex items-center ${activeTab === "details"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
+                  className={`px-4 py-2 mr-2 rounded-lg text-sm whitespace-nowrap flex items-center ${
+                    activeTab === "details"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
                 >
                   <FaInfoCircle className="mr-1" /> Chi tiết
                 </button>
                 <button
                   onClick={() => setActiveTab("description")}
-                  className={`px-4 py-2 mr-2 rounded-lg text-sm whitespace-nowrap flex items-center ${activeTab === "description"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
+                  className={`px-4 py-2 mr-2 rounded-lg text-sm whitespace-nowrap flex items-center ${
+                    activeTab === "description"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
                 >
                   <FaInfoIcon className="mr-1" /> Mô tả
                 </button>
                 <button
                   onClick={() => setActiveTab("comments")}
-                  className={`px-4 py-2 mr-2 rounded-lg text-sm whitespace-nowrap flex items-center ${activeTab === "comments"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
+                  className={`px-4 py-2 mr-2 rounded-lg text-sm whitespace-nowrap flex items-center ${
+                    activeTab === "comments"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
                 >
                   <FaComments className="mr-1" /> Đánh giá
                 </button>
                 <button
                   onClick={() => setActiveTab("contact")}
-                  className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap flex items-center ${activeTab === "contact"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
+                  className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap flex items-center ${
+                    activeTab === "contact"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
                 >
                   <FaUserCircleIcon className="mr-1" /> Liên hệ
                 </button>
@@ -955,10 +1015,11 @@ const ListingDetail = () => {
                     <InfoItem
                       icon={FaDollarSign}
                       label="Giá thuê"
-                      value={`${listing.price
-                        ? listing.price.toLocaleString()
-                        : "Chưa có giá"
-                        } VND/tháng`}
+                      value={`${
+                        listing.price
+                          ? listing.price.toLocaleString()
+                          : "Chưa có giá"
+                      } VND/tháng`}
                       highlight={true}
                     />
                     <InfoItem
@@ -1100,29 +1161,33 @@ const ListingDetail = () => {
                     <InfoItem
                       icon={FaBolt}
                       label="Điện"
-                      value={`${formatPrice(listing.additionalCosts?.electricity || 0)}/kWh`}
+                      value={`${formatPrice(
+                        listing.additionalCosts?.electricity || 0
+                      )}/kWh`}
                     />
                     <InfoItem
                       icon={FaTint}
                       label="Nước"
-                      value={`${formatPrice(listing.additionalCosts?.water || 0)} VND/m³`}
+                      value={`${formatPrice(
+                        listing.additionalCosts?.water || 0
+                      )} VND/m³`}
                     />
                     <InfoItem
                       icon={FaWifi}
                       label="Internet"
-                      value={`${formatPrice(listing.additionalCosts?.internet || 0
-                        )} VND/tháng`}
+                      value={`${formatPrice(
+                        listing.additionalCosts?.internet || 0
+                      )} VND/tháng`}
                     />
                     <InfoItem
                       icon={FaBroom}
                       label="Dọn dẹp"
-                      value={`${formatPrice(listing.additionalCosts?.cleaning || 0
-                        )} VND/tháng`}
+                      value={`${formatPrice(
+                        listing.additionalCosts?.cleaning || 0
+                      )} VND/tháng`}
                     />
                   </div>
                 </div>
-
-
               </div>
             </div>
 
@@ -1140,56 +1205,69 @@ const ListingDetail = () => {
                       className="w-16 h-16 rounded-full object-cover border-2 border-indigo-100"
                     />
                     <div
-                      className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white ${isOnline ? "bg-green-500" : "bg-gray-400"
-                        }`}
+                      className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white ${
+                        isOnline ? "bg-green-500" : "bg-gray-400"
+                      }`}
                     ></div>
                   </div>
                   <div className="ml-4">
                     <h3 className="font-bold text-lg text-indigo-900">
                       {username || "Chủ trọ"}
                     </h3>
-                    <div className="flex items-center">
-
-
-                    </div>
+                    <div className="flex items-center"></div>
                   </div>
                 </div>
                 {renderContactInfo()}
                 {user ? (
-                  <>
-                    <button
-                      onClick={() => setShowBookingForm(true)}
-                      className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg mb-4 hover:bg-indigo-700 transition duration-300 font-semibold flex items-center justify-center"
-                    >
-                      <FaCalendarAlt className="mr-2" /> Đặt lịch xem phòng
-                    </button>
-                    <button
-                      onClick={() => {
-                        const phoneNumber = phone;
-                        if (phoneNumber) {
-                          window.open(`https://zalo.me/${phoneNumber}`, '_blank');
-                        } else {
-                          toast.error(
-                            "Số điện thoại của chủ trọ không khả dụng.",
-                            {
-                              icon: (
-                                <FaExclamationCircle className="text-red-500" />
-                              ),
-                            }
-                          );
-                        }
-                      }}
-                      className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg mb-4 hover:bg-blue-600 transition duration-300 font-semibold flex items-center justify-center"
-                    >
-                      <FaComment className="mr-2" /> Nhắn tin
-                    </button>
-                    <button
-                      onClick={handleReport}
-                      className="w-full bg-red-500 text-white py-3 px-4 rounded-lg hover:bg-red-600 transition duration-300 font-semibold flex items-center justify-center"
-                    >
-                      <FaFlag className="mr-2" /> Báo cáo tin đăng
-                    </button>
-                  </>
+                  user.id === listing.landlord._id ? (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center">
+                        <FaInfoCircle className="text-blue-500 mr-3 flex-shrink-0" />
+                        <p className="text-blue-700 font-medium text-sm">
+                          Đây là bài đăng của bạn. Bạn không thể đặt lịch xem
+                          phòng cho chính mình.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setShowBookingForm(true)}
+                        className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg mb-4 hover:bg-indigo-700 transition duration-300 font-semibold flex items-center justify-center"
+                      >
+                        <FaCalendarAlt className="mr-2" /> Đặt lịch xem phòng
+                      </button>
+                      <button
+                        onClick={() => {
+                          const phoneNumber = phone;
+                          if (phoneNumber) {
+                            window.open(
+                              `https://zalo.me/${phoneNumber}`,
+                              "_blank"
+                            );
+                          } else {
+                            toast.error(
+                              "Số điện thoại của chủ trọ không khả dụng.",
+                              {
+                                icon: (
+                                  <FaExclamationCircle className="text-red-500" />
+                                ),
+                              }
+                            );
+                          }
+                        }}
+                        className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg mb-4 hover:bg-blue-600 transition duration-300 font-semibold flex items-center justify-center"
+                      >
+                        <FaComment className="mr-2" /> Nhắn tin
+                      </button>
+                      <button
+                        onClick={handleReport}
+                        className="w-full bg-red-500 text-white py-3 px-4 rounded-lg hover:bg-red-600 transition duration-300 font-semibold flex items-center justify-center"
+                      >
+                        <FaFlag className="mr-2" /> Báo cáo tin đăng
+                      </button>
+                    </>
+                  )
                 ) : (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <div className="flex items-start">
@@ -1225,7 +1303,8 @@ const ListingDetail = () => {
                       <img
                         src={
                           post.images[0]?.url ||
-                          "/placeholder.svg?height=80&width=80"
+                          "/placeholder.svg?height=80&width=80" ||
+                          "/placeholder.svg"
                         }
                         alt={post.title}
                         className="w-24 h-24 object-cover rounded-lg shadow-sm group-hover:shadow-md transition"
@@ -1281,7 +1360,8 @@ const ListingDetail = () => {
             <img
               src={
                 listing.images[currentImageIndex]?.url ||
-                "/placeholder.svg?height=800&width=1200"
+                "/placeholder.svg?height=800&width=1200" ||
+                "/placeholder.svg"
               }
               alt={`Full size ${currentImageIndex + 1}`}
               className="max-h-full max-w-full object-contain"
@@ -1305,10 +1385,11 @@ const ListingDetail = () => {
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`flex-shrink-0 ${currentImageIndex === index
-                    ? "ring-2 ring-indigo-500"
-                    : "opacity-60 hover:opacity-100 transition"
-                    }`}
+                  className={`flex-shrink-0 ${
+                    currentImageIndex === index
+                      ? "ring-2 ring-indigo-500"
+                      : "opacity-60 hover:opacity-100 transition"
+                  }`}
                 >
                   <img
                     src={image.url || "/placeholder.svg?height=80&width=80"}
@@ -1352,25 +1433,28 @@ const ListingDetail = () => {
 
 const InfoItem = ({ icon: Icon, label, value, highlight, status }) => (
   <div
-    className={`flex items-center ${highlight ? "bg-indigo-50 border-l-4 border-indigo-500" : "bg-gray-50"
-      } p-4 rounded-lg`}
+    className={`flex items-center ${
+      highlight ? "bg-indigo-50 border-l-4 border-indigo-500" : "bg-gray-50"
+    } p-4 rounded-lg`}
   >
     <Icon
-      className={`${highlight ? "text-indigo-600" : "text-indigo-500"
-        } mr-3 flex-shrink-0`}
+      className={`${
+        highlight ? "text-indigo-600" : "text-indigo-500"
+      } mr-3 flex-shrink-0`}
       size={18}
     />
     <div className="overflow-hidden">
       <span className="text-sm text-gray-500">{label}</span>
       <div
-        className={`font-semibold ${status === "available"
-          ? "text-green-600"
-          : status === "unavailable"
+        className={`font-semibold ${
+          status === "available"
+            ? "text-green-600"
+            : status === "unavailable"
             ? "text-red-500"
             : highlight
-              ? "text-indigo-900"
-              : "text-gray-800"
-          } break-words`}
+            ? "text-indigo-900"
+            : "text-gray-800"
+        } break-words`}
       >
         {value}
       </div>
@@ -1380,13 +1464,16 @@ const InfoItem = ({ icon: Icon, label, value, highlight, status }) => (
 
 const AmenityItem = ({ icon: Icon, label, available }) => (
   <div
-    className={`flex items-center ${available ? "text-gray-800" : "text-gray-400"
-      } bg-gray-50 p-3 rounded-lg border ${available ? "border-green-100" : "border-gray-100"
-      }`}
+    className={`flex items-center ${
+      available ? "text-gray-800" : "text-gray-400"
+    } bg-gray-50 p-3 rounded-lg border ${
+      available ? "border-green-100" : "border-gray-100"
+    }`}
   >
     <div
-      className={`p-2 rounded-full mr-3 ${available ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"
-        }`}
+      className={`p-2 rounded-full mr-3 ${
+        available ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"
+      }`}
     >
       <Icon size={16} />
     </div>

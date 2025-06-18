@@ -1,10 +1,17 @@
-import React, { useState, useEffect } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { createRequest, getRequestByUserId, updateDeleteRequest } from "../api/request";
+import {
+  createRequest,
+  getRequestByUserId,
+  updateDeleteRequest,
+} from "../api/request";
 import { getPostById } from "../api/post";
+import { toast } from "react-toastify";
 
 const RoomBookingForm = ({ onClose }) => {
   const [date, setDate] = useState(null);
@@ -20,69 +27,71 @@ const RoomBookingForm = ({ onClose }) => {
   const [existingBooking, setExistingBooking] = useState(null);
   const [checkingBooking, setCheckingBooking] = useState(true);
 
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
   const formatDate = (dateTime) => {
     if (!dateTime) return "Chưa xác định";
-    
+
     const date = new Date(dateTime);
-    
-    return new Intl.DateTimeFormat('vi-VN', {
-      timeZone: 'Asia/Ho_Chi_Minh', // Chỉ định rõ timezone
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+
+    return new Intl.DateTimeFormat("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh", // Chỉ định rõ timezone
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     }).format(date);
   };
-  
+
   // Sửa function formatTime
   const formatTime = (dateTime) => {
     if (!dateTime) return "Chưa xác định";
-    
+
     const date = new Date(dateTime);
-    
-    return new Intl.DateTimeFormat('vi-VN', {
-      timeZone: 'Asia/Ho_Chi_Minh', // Chỉ định rõ timezone
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false // Sử dụng format 24h
+
+    return new Intl.DateTimeFormat("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh", // Chỉ định rõ timezone
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false, // Sử dụng format 24h
     }).format(date);
   };
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'pending': 
-      case 'cho_xac_nhan':
-        return '#f59e0b';
-      case 'approved': 
-      case 'da_xac_nhan':
-        return '#10b981';
-      case 'rejected': 
-      case 'da_tu_choi':
-        return '#ef4444';
-      case 'completed': 
-      case 'hoan_thanh':
-        return '#6366f1';
-      default: 
-        return '#6b7280';
+      case "pending":
+      case "cho_xac_nhan":
+        return "#f59e0b";
+      case "approved":
+      case "da_xac_nhan":
+        return "#10b981";
+      case "rejected":
+      case "da_tu_choi":
+        return "#ef4444";
+      case "completed":
+      case "hoan_thanh":
+        return "#6366f1";
+      default:
+        return "#6b7280";
     }
   };
 
   const getStatusText = (status) => {
     switch (status?.toLowerCase()) {
-      case 'pending':
-      case 'cho_xac_nhan':
-        return 'Chờ xác nhận';
-      case 'approved':
-      case 'da_xac_nhan':
-        return 'Đã xác nhận';
-      case 'rejected':
-      case 'da_tu_choi':
-        return 'Đã từ chối';
-      case 'completed':
-      case 'hoan_thanh':
-        return 'Đã hoàn thành';
-      default: 
-        return 'Không xác định';
+      case "pending":
+      case "cho_xac_nhan":
+        return "Chờ xác nhận";
+      case "approved":
+      case "da_xac_nhan":
+        return "Đã xác nhận";
+      case "rejected":
+      case "da_tu_choi":
+        return "Đã từ chối";
+      case "completed":
+      case "hoan_thanh":
+        return "Đã hoàn thành";
+      default:
+        return "Không xác định";
     }
   };
 
@@ -95,33 +104,35 @@ const RoomBookingForm = ({ onClose }) => {
 
     try {
       setCheckingBooking(true);
-      
-      console.log('=== CHECKING EXISTING BOOKING ===');
-      console.log('User ID:', user.id);
-      console.log('Post ID:', id, 'Type:', typeof id);
-      
+
+      console.log("=== CHECKING EXISTING BOOKING ===");
+      console.log("User ID:", user.id);
+      console.log("Post ID:", id, "Type:", typeof id);
+
       const response = await getRequestByUserId(user.id);
-      
-      console.log('User requests response:', response.data);
-      
+
+      console.log("User requests response:", response.data);
+
       if (response.data && Array.isArray(response.data)) {
         // Tìm request cho post hiện tại
-        const existingRequest = response.data.find(request => {
-          return request.id_post === id || 
-                 request.id_post === parseInt(id) ||
-                 String(request.id_post) === String(id);
+        const existingRequest = response.data.find((request) => {
+          return (
+            request.id_post === id ||
+            request.id_post === Number.parseInt(id) ||
+            String(request.id_post) === String(id)
+          );
         });
-        
-        console.log('Found existing request:', existingRequest);
-        
+
+        console.log("Found existing request:", existingRequest);
+
         if (existingRequest) {
           setHasExistingBooking(true);
           setExistingBooking(existingRequest);
-          console.log('✅ User has existing booking');
+          console.log("✅ User has existing booking");
         } else {
           setHasExistingBooking(false);
           setExistingBooking(null);
-          console.log('❌ No existing booking found');
+          console.log("❌ No existing booking found");
         }
       } else {
         setHasExistingBooking(false);
@@ -140,7 +151,7 @@ const RoomBookingForm = ({ onClose }) => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch post details
         const response = await getPostById(id);
         setPostDetails(response.data);
@@ -153,7 +164,7 @@ const RoomBookingForm = ({ onClose }) => {
           setCheckingBooking(false);
         }
       } catch (err) {
-        console.error('Error fetching data:', err);
+        console.error("Error fetching data:", err);
         setError("Không thể tải thông tin bài đăng.");
         setCheckingBooking(false);
       } finally {
@@ -167,26 +178,27 @@ const RoomBookingForm = ({ onClose }) => {
   }, [id, user]);
 
   // Function hủy booking
-  const handleCancelBooking = async () => {
-    if (!window.confirm('Bạn có chắc muốn hủy lịch hẹn này không?')) {
-      return;
-    }
+  const handleCancelBooking = () => {
+    setShowConfirmDialog(true);
+  };
 
+  const confirmCancellation = async () => {
     try {
-
       const requestId = existingBooking._id || existingBooking.id;
       await updateDeleteRequest(requestId);
 
-      console.log('Cancelling booking:', existingBooking.id);
-      
+      console.log("Cancelling booking:", existingBooking.id);
+
       // Reset state
       setHasExistingBooking(false);
       setExistingBooking(null);
-      
-      alert('Đã hủy lịch hẹn thành công! Bạn có thể đặt lịch mới.');
+      setShowConfirmDialog(false);
+
+      toast.success("Đã hủy lịch hẹn thành công! Bạn có thể đặt lịch mới.");
     } catch (error) {
-      console.error('Error canceling booking:', error);
-      alert('Có lỗi khi hủy lịch hẹn. Vui lòng thử lại.');
+      console.error("Error canceling booking:", error);
+      toast.error("Có lỗi khi hủy lịch hẹn. Vui lòng thử lại.");
+      setShowConfirmDialog(false);
     }
   };
 
@@ -199,110 +211,137 @@ const RoomBookingForm = ({ onClose }) => {
 
   const minDate = new Date();
 
-    const handleBooking = async (e) => {
+  const handleBooking = async (e) => {
     e.preventDefault();
+
     if (!date || !time) {
-      alert("Vui lòng chọn ngày và giờ");
+      toast.warn("Vui lòng chọn ngày và giờ", {
+        position: "top-center",
+        autoClose: 3000,
+      });
       return;
     }
-  
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const selectedDate = new Date(date);
     selectedDate.setHours(0, 0, 0, 0);
-  
+
     if (selectedDate < today) {
-      alert("Không thể đặt lịch cho ngày trong quá khứ!");
+      toast.warn("Không thể đặt lịch cho ngày trong quá khứ!", {
+        position: "top-center",
+        autoClose: 3000,
+      });
       return;
     }
-  
+
     // FIX: Tạo datetime đúng timezone Việt Nam
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
     // Tạo ISO string với timezone Việt Nam (+07:00)
     const isoString = `${year}-${month}-${day}T${time}:00+07:00`;
-    
+
     console.log("Sending datetime:", isoString); // Debug log
-  
+
     const requestData = {
       id_user_rent: user.id,
       id_renter: landlord,
       id_post: id,
       date_time: isoString, // Gửi với timezone rõ ràng
     };
-  
+
     try {
+      // Hiển thị loading toast
+      const loadingToast = toast.loading("Đang đặt lịch...");
+
       const response = await createRequest(requestData);
-      alert("Đặt lịch thành công!");
-      onClose();
+
+      // Đóng loading toast
+      toast.dismiss(loadingToast);
+
+      // Hiển thị thành công
+      toast.success("Đặt lịch thành công! Chủ trọ sẽ liên hệ với bạn sớm.", {
+        position: "top-center",
+        autoClose: 4000,
+      });
+
+      // Đóng modal sau 1 giây để user thấy toast
+      setTimeout(() => {
+        onClose();
+      }, 1000);
     } catch (error) {
       console.error("Error creating request:", error);
-      alert("Đặt lịch không thành công. Vui lòng thử lại.");
+      toast.error("Đặt lịch không thành công. Vui lòng thử lại.", {
+        position: "top-center",
+        autoClose: 3000,
+      });
     }
   };
 
   // Styles
   const containerStyle = {
-    position: 'fixed',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    backgroundColor: 'white',
-    padding: '24px',
-    borderRadius: '16px',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+    position: "fixed",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    backgroundColor: "white",
+    padding: "24px",
+    borderRadius: "16px",
+    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
     zIndex: 1000,
-    width: '90%',
-    maxWidth: '500px',
-    maxHeight: '90vh',
-    overflowY: 'auto'
+    width: "90%",
+    maxWidth: "500px",
+    maxHeight: "90vh",
+    overflowY: "auto",
   };
 
   const headerStyle = {
-    fontSize: '24px',
-    fontWeight: 'bold',
-    marginBottom: '16px',
-    textAlign: 'center',
-    color: '#1f2937'
+    fontSize: "24px",
+    fontWeight: "bold",
+    marginBottom: "16px",
+    textAlign: "center",
+    color: "#1f2937",
   };
 
   const buttonStyle = {
-    padding: '12px 24px',
-    borderRadius: '8px',
-    border: 'none',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    minWidth: '120px'
+    padding: "12px 24px",
+    borderRadius: "8px",
+    border: "none",
+    fontSize: "14px",
+    fontWeight: "600",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+    minWidth: "120px",
   };
 
   const closeButtonStyle = {
-    position: 'absolute',
-    top: '12px',
-    right: '12px',
-    background: '#f3f4f6',
-    border: 'none',
-    borderRadius: '50%',
-    width: '32px',
-    height: '32px',
-    cursor: 'pointer',
-    fontSize: '16px',
-    color: '#6b7280',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
+    position: "absolute",
+    top: "12px",
+    right: "12px",
+    background: "#f3f4f6",
+    border: "none",
+    borderRadius: "50%",
+    width: "32px",
+    height: "32px",
+    cursor: "pointer",
+    fontSize: "16px",
+    color: "#6b7280",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   };
 
   // Loading state
   if (loading || checkingBooking) {
     return (
       <div style={containerStyle}>
-        <button onClick={onClose} style={closeButtonStyle}>✕</button>
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <div style={{ fontSize: '24px', marginBottom: '16px' }}>⏳</div>
+        <button onClick={onClose} style={closeButtonStyle}>
+          ✕
+        </button>
+        <div style={{ textAlign: "center", padding: "40px" }}>
+          <div style={{ fontSize: "24px", marginBottom: "16px" }}>⏳</div>
           <p>Đang tải thông tin...</p>
         </div>
       </div>
@@ -313,10 +352,12 @@ const RoomBookingForm = ({ onClose }) => {
   if (error) {
     return (
       <div style={containerStyle}>
-        <button onClick={onClose} style={closeButtonStyle}>✕</button>
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <div style={{ fontSize: '24px', marginBottom: '16px' }}>❌</div>
-          <p style={{ color: '#ef4444' }}>{error}</p>
+        <button onClick={onClose} style={closeButtonStyle}>
+          ✕
+        </button>
+        <div style={{ textAlign: "center", padding: "40px" }}>
+          <div style={{ fontSize: "24px", marginBottom: "16px" }}>❌</div>
+          <p style={{ color: "#ef4444" }}>{error}</p>
         </div>
       </div>
     );
@@ -326,90 +367,229 @@ const RoomBookingForm = ({ onClose }) => {
   if (hasExistingBooking && existingBooking) {
     return (
       <div style={containerStyle}>
-        <button onClick={onClose} style={closeButtonStyle}>✕</button>
-        
-        <h2 style={headerStyle}>{postDetails?.title || 'Phòng trọ'}</h2>
-        
+        <button onClick={onClose} style={closeButtonStyle}>
+          ✕
+        </button>
+
+        <h2 style={headerStyle}>{postDetails?.title || "Phòng trọ"}</h2>
+
         {/* Thông báo đã đặt lịch */}
-        <div style={{
-          backgroundColor: '#fef3c7',
-          border: '1px solid #f59e0b',
-          borderRadius: '12px',
-          padding: '20px',
-          textAlign: 'center',
-          marginBottom: '20px'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📅</div>
-          <h3 style={{ color: '#92400e', marginBottom: '12px', fontSize: '18px' }}>
+        <div
+          style={{
+            backgroundColor: "#fef3c7",
+            border: "1px solid #f59e0b",
+            borderRadius: "12px",
+            padding: "20px",
+            textAlign: "center",
+            marginBottom: "20px",
+          }}
+        >
+          <div style={{ fontSize: "48px", marginBottom: "16px" }}>📅</div>
+          <h3
+            style={{ color: "#92400e", marginBottom: "12px", fontSize: "18px" }}
+          >
             Bạn đã đặt lịch xem phòng này rồi!
           </h3>
-          <div style={{ color: '#78350f', fontSize: '14px', lineHeight: '1.6', textAlign: 'left' }}>
-            <p><strong>Mã yêu cầu:</strong> #{existingBooking._id || existingBooking.id}</p>
-            <p><strong>Ngày hẹn:</strong> {formatDate(existingBooking.date_time)}</p>
-            <p><strong>Giờ hẹn:</strong> {formatTime(existingBooking.date_time)}</p>
-            <p style={{ display: 'flex', alignItems: 'center' }}>
+          <div
+            style={{
+              color: "#78350f",
+              fontSize: "14px",
+              lineHeight: "1.6",
+              textAlign: "left",
+            }}
+          >
+            <p>
+              <strong>Mã yêu cầu:</strong> #
+              {existingBooking._id || existingBooking.id}
+            </p>
+            <p>
+              <strong>Ngày hẹn:</strong> {formatDate(existingBooking.date_time)}
+            </p>
+            <p>
+              <strong>Giờ hẹn:</strong> {formatTime(existingBooking.date_time)}
+            </p>
+            <p style={{ display: "flex", alignItems: "center" }}>
               <strong>Trạng thái:</strong>
-              <span style={{
-                padding: '4px 8px',
-                borderRadius: '4px',
-                backgroundColor: getStatusColor(existingBooking.status),
-                color: 'white',
-                marginLeft: '8px',
-                fontSize: '12px'
-              }}>
+              <span
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  backgroundColor: getStatusColor(existingBooking.status),
+                  color: "white",
+                  marginLeft: "8px",
+                  fontSize: "12px",
+                }}
+              >
                 {getStatusText(existingBooking.status)}
               </span>
             </p>
             {existingBooking.notes && (
-              <p><strong>Ghi chú:</strong> {existingBooking.notes}</p>
+              <p>
+                <strong>Ghi chú:</strong> {existingBooking.notes}
+              </p>
             )}
           </div>
         </div>
 
         {/* Lưu ý */}
-        <div style={{
-          backgroundColor: '#e0f2fe',
-          border: '1px solid #0284c7',
-          borderRadius: '8px',
-          padding: '16px',
-          marginBottom: '20px'
-        }}>
-          <h4 style={{ color: '#0c4a6e', marginBottom: '8px', fontSize: '14px' }}>💡 Lưu ý:</h4>
-          <ul style={{ 
-            color: '#075985', 
-            fontSize: '13px', 
-            lineHeight: '1.4', 
-            margin: 0,
-            paddingLeft: '16px'
-          }}>
+        <div
+          style={{
+            backgroundColor: "#e0f2fe",
+            border: "1px solid #0284c7",
+            borderRadius: "8px",
+            padding: "16px",
+            marginBottom: "20px",
+          }}
+        >
+          <h4
+            style={{ color: "#0c4a6e", marginBottom: "8px", fontSize: "14px" }}
+          >
+            💡 Lưu ý:
+          </h4>
+          <ul
+            style={{
+              color: "#075985",
+              fontSize: "13px",
+              lineHeight: "1.4",
+              margin: 0,
+              paddingLeft: "16px",
+            }}
+          >
             <li>Chỉ được phép đặt 1 lịch cho mỗi phòng trọ</li>
-            <li>Nếu muốn thay đổi lịch hẹn, vui lòng hủy lịch cũ trước hoặc cập nhật lịch đặt</li>
+            <li>
+              Nếu muốn thay đổi lịch hẹn, vui lòng hủy lịch cũ trước hoặc cập
+              nhật lịch đặt
+            </li>
             <li>Liên hệ chủ trọ nếu cần hỗ trợ</li>
           </ul>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-          <button 
+        <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+          <button
             onClick={handleCancelBooking}
             style={{
               ...buttonStyle,
-              backgroundColor: '#dc2626',
-              color: 'white'
+              backgroundColor: "#dc2626",
+              color: "white",
             }}
           >
             Hủy lịch hẹn
           </button>
-          <button 
+          <button
             onClick={onClose}
             style={{
               ...buttonStyle,
-              backgroundColor: '#6b7280',
-              color: 'white'
+              backgroundColor: "#6b7280",
+              color: "white",
             }}
           >
             Đóng
           </button>
         </div>
+        {/* Confirmation Dialog */}
+        {showConfirmDialog && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1001,
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: "white",
+                padding: "24px",
+                borderRadius: "12px",
+                boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+                maxWidth: "400px",
+                width: "90%",
+                textAlign: "center",
+              }}
+            >
+              <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
+              <h3
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "600",
+                  marginBottom: "12px",
+                  color: "#1f2937",
+                }}
+              >
+                Xác nhận hủy lịch hẹn
+              </h3>
+              <p
+                style={{
+                  fontSize: "14px",
+                  color: "#6b7280",
+                  marginBottom: "24px",
+                  lineHeight: "1.5",
+                }}
+              >
+                Bạn có chắc chắn muốn hủy lịch hẹn này không? Hành động này
+                không thể hoàn tác.
+              </p>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "12px",
+                  justifyContent: "center",
+                }}
+              >
+                <button
+                  onClick={confirmCancellation}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#dc2626",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    transition: "background-color 0.2s",
+                  }}
+                  onMouseOver={(e) =>
+                    (e.target.style.backgroundColor = "#b91c1c")
+                  }
+                  onMouseOut={(e) =>
+                    (e.target.style.backgroundColor = "#dc2626")
+                  }
+                >
+                  Xác nhận hủy
+                </button>
+                <button
+                  onClick={() => setShowConfirmDialog(false)}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#f3f4f6",
+                    color: "#374151",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    transition: "background-color 0.2s",
+                  }}
+                  onMouseOver={(e) =>
+                    (e.target.style.backgroundColor = "#e5e7eb")
+                  }
+                  onMouseOut={(e) =>
+                    (e.target.style.backgroundColor = "#f3f4f6")
+                  }
+                >
+                  Không hủy
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -417,62 +597,82 @@ const RoomBookingForm = ({ onClose }) => {
   // Normal booking form
   return (
     <div style={containerStyle}>
-      <button onClick={onClose} style={closeButtonStyle}>✕</button>
-      
-      <h2 style={headerStyle}>{postDetails?.title || 'Đặt lịch xem phòng'}</h2>
-      <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px', textAlign: 'center' }}>
+      <button onClick={onClose} style={closeButtonStyle}>
+        ✕
+      </button>
+
+      <h2 style={headerStyle}>{postDetails?.title || "Đặt lịch xem phòng"}</h2>
+      <p
+        style={{
+          fontSize: "14px",
+          color: "#666",
+          marginBottom: "20px",
+          textAlign: "center",
+        }}
+      >
         Chọn ngày và giờ để đặt lịch
       </p>
-      
-      <div style={{ marginBottom: '20px' }}>
+
+      <div style={{ marginBottom: "20px" }}>
         <img
           src={postDetails?.images?.[0]?.url || "/placeholder.svg"}
           alt="Hình ảnh phòng"
           style={{
-            width: '100%',
-            height: '200px',
-            objectFit: 'cover',
-            borderRadius: '8px'
+            width: "100%",
+            height: "200px",
+            objectFit: "cover",
+            borderRadius: "8px",
           }}
         />
       </div>
-      
-      <div style={{
-        fontSize: '24px',
-        fontWeight: 'bold',
-        marginBottom: '20px',
-        textAlign: 'center',
-        color: '#1f2937'
-      }}>
-        {postDetails?.price ? `${postDetails.price.toLocaleString()} VND` : 'Liên hệ'}
+
+      <div
+        style={{
+          fontSize: "24px",
+          fontWeight: "bold",
+          marginBottom: "20px",
+          textAlign: "center",
+          color: "#1f2937",
+        }}
+      >
+        {postDetails?.price
+          ? `${postDetails.price.toLocaleString()} VND`
+          : "Liên hệ"}
       </div>
-      
-      <form onSubmit={handleBooking} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+      <form
+        onSubmit={handleBooking}
+        style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+      >
         <DatePicker
           selected={date}
           onChange={(date) => setDate(date)}
           dateFormat="dd/MM/yyyy"
           placeholderText="Chọn ngày (từ hôm nay)"
-          customInput={<input style={{
-            width: '100%',
-            padding: '12px',
-            border: '1px solid #ccc',
-            borderRadius: '8px',
-            fontSize: '16px'
-          }} />}
+          customInput={
+            <input
+              style={{
+                width: "100%",
+                padding: "12px",
+                border: "1px solid #ccc",
+                borderRadius: "8px",
+                fontSize: "16px",
+              }}
+            />
+          }
           minDate={minDate}
           filterDate={(date) => !isDateDisabled(date)}
         />
-        
+
         <select
           value={time}
           onChange={(e) => setTime(e.target.value)}
           style={{
-            width: '100%',
-            padding: '12px',
-            border: '1px solid #ccc',
-            borderRadius: '8px',
-            fontSize: '16px'
+            width: "100%",
+            padding: "12px",
+            border: "1px solid #ccc",
+            borderRadius: "8px",
+            fontSize: "16px",
           }}
         >
           <option value="">Chọn giờ</option>
@@ -500,19 +700,19 @@ const RoomBookingForm = ({ onClose }) => {
           <option value="19:30">19:30 - Tối</option>
           <option value="20:00">20:00 - Tối</option>
         </select>
-        
-        <button 
-          type="submit" 
+
+        <button
+          type="submit"
           style={{
-            width: '100%',
-            padding: '12px',
-            backgroundColor: '#1f2937',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '16px',
-            fontWeight: '600'
+            width: "100%",
+            padding: "12px",
+            backgroundColor: "#1f2937",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontSize: "16px",
+            fontWeight: "600",
           }}
         >
           Đặt Lịch

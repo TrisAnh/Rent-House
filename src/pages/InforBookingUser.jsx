@@ -1,6 +1,17 @@
-import React, { useEffect, useState } from "react";
+"use client";
+
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, Clock, Home, Check, X, User, MapPin, DollarSign, Phone, Mail, Square } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  Home,
+  Check,
+  X,
+  User,
+  Phone,
+  Mail,
+} from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuth } from "../hooks/useAuth";
 import {
@@ -22,6 +33,8 @@ const BookingDetailsUser = () => {
   const [newDate, setNewDate] = useState(null); // Thay đổi từ newDateTime thành newDate
   const [newTime, setNewTime] = useState("");
   const { user } = useAuth();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingBookingId, setDeletingBookingId] = useState(null);
 
   useEffect(() => {
     const fetchBookingDetails = async () => {
@@ -75,23 +88,25 @@ const BookingDetailsUser = () => {
   const formatAddress = (location) => {
     if (!location) return "Chưa có thông tin";
     const { address, ward, district, city } = location;
-    return `${address || ''}, ${ward || ''}, ${district || ''}, ${city || ''}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',');
+    return `${address || ""}, ${ward || ""}, ${district || ""}, ${city || ""}`
+      .replace(/^,\s*|,\s*$/g, "")
+      .replace(/,\s*,/g, ",");
   };
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(price);
   };
 
   const formatRoomType = (roomType) => {
     const typeMap = {
-      'Single': 'Phòng đơn',
-      'Double': 'Phòng đôi',
-      'Shared': 'Phòng chia sẻ',
-      'Studio': 'Studio',
-      'Apartment': 'Căn hộ'
+      Single: "Phòng đơn",
+      Double: "Phòng đôi",
+      Shared: "Phòng chia sẻ",
+      Studio: "Studio",
+      Apartment: "Căn hộ",
     };
     return typeMap[roomType] || roomType;
   };
@@ -106,42 +121,54 @@ const BookingDetailsUser = () => {
 
   const getStatusText = (status) => {
     const statusMap = {
-      'Pending': 'Chờ xác nhận',
-      'Accepted': 'Đã được chấp nhận',
-      'Declined': 'Đã bị từ chối'
+      Pending: "Chờ xác nhận",
+      Accepted: "Đã được chấp nhận",
+      Declined: "Đã bị từ chối",
     };
     return statusMap[status] || status;
   };
 
   const renderAmenities = (amenities) => {
     const amenityList = [
-      { key: 'hasWifi', label: 'WiFi', icon: '📶' },
-      { key: 'hasParking', label: 'Chỗ đậu xe', icon: '🚗' },
-      { key: 'hasAirConditioner', label: 'Điều hòa', icon: '❄️' },
-      { key: 'hasKitchen', label: 'Bếp', icon: '🍳' },
-      { key: 'hasElevator', label: 'Thang máy', icon: '🛗' }
+      { key: "hasWifi", label: "WiFi", icon: "📶" },
+      { key: "hasParking", label: "Chỗ đậu xe", icon: "🚗" },
+      { key: "hasAirConditioner", label: "Điều hòa", icon: "❄️" },
+      { key: "hasKitchen", label: "Bếp", icon: "🍳" },
+      { key: "hasElevator", label: "Thang máy", icon: "🛗" },
     ];
 
     return amenityList
-      .filter(amenity => amenities[amenity.key])
-      .map(amenity => (
+      .filter((amenity) => amenities[amenity.key])
+      .map((amenity) => (
         <span key={amenity.key} className="amenity-tag">
           {amenity.icon} {amenity.label}
         </span>
       ));
   };
 
-  const handleDelete = async (bookingId) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa yêu cầu này không?")) {
-      try {
-        await updateDeleteRequest(bookingId);
-        setBookingData((prevBookings) =>
-          prevBookings.filter((booking) => booking._id !== bookingId)
-        );
-        toast.success("Yêu cầu đã được xóa thành công.");
-      } catch (error) {
-        toast.error("Không thể xóa yêu cầu.");
-      }
+  const handleDelete = (bookingId) => {
+    setDeletingBookingId(bookingId);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await updateDeleteRequest(deletingBookingId);
+      setBookingData((prevBookings) =>
+        prevBookings.filter((booking) => booking._id !== deletingBookingId)
+      );
+      toast.success("Yêu cầu đã được xóa thành công!", {
+        position: "top-center",
+        autoClose: 3000,
+      });
+    } catch (error) {
+      toast.error("Không thể xóa yêu cầu. Vui lòng thử lại.", {
+        position: "top-center",
+        autoClose: 3000,
+      });
+    } finally {
+      setShowDeleteConfirm(false);
+      setDeletingBookingId(null);
     }
   };
 
@@ -160,7 +187,10 @@ const BookingDetailsUser = () => {
 
   const submitUpdate = async () => {
     if (!newDate || !newTime || !updatingBookingId) {
-      toast.error("Vui lòng chọn ngày và giờ mới.");
+      toast.error("Vui lòng chọn ngày và giờ mới.", {
+        position: "top-center",
+        autoClose: 3000,
+      });
       return;
     }
 
@@ -171,18 +201,29 @@ const BookingDetailsUser = () => {
     selectedDate.setHours(0, 0, 0, 0);
 
     if (selectedDate < today) {
-      toast.error("Không thể đặt lịch cho ngày trong quá khứ!");
+      toast.error("Không thể đặt lịch cho ngày trong quá khứ!", {
+        position: "top-center",
+        autoClose: 3000,
+      });
       return;
     }
 
     try {
+      // Show loading toast
+      const loadingToast = toast.loading("Đang cập nhật lịch hẹn...");
+
       // Combine date và time thành datetime
-      const combinedDateTime = new Date(`${newDate.toISOString().split("T")[0]}T${newTime}`);
+      const combinedDateTime = new Date(
+        `${newDate.toISOString().split("T")[0]}T${newTime}`
+      );
       const utcDateTime = combinedDateTime.toISOString();
 
       const response = await updateRequest(updatingBookingId, {
         date_time: utcDateTime,
       });
+
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
 
       if (response.status === 200) {
         setBookingData((prevBookings) =>
@@ -192,13 +233,22 @@ const BookingDetailsUser = () => {
               : booking
           )
         );
-        toast.success("Yêu cầu đã được cập nhật thành công.");
+        toast.success(
+          "Lịch hẹn đã được cập nhật thành công! Chủ trọ sẽ được thông báo.",
+          {
+            position: "top-center",
+            autoClose: 4000,
+          }
+        );
       } else {
         throw new Error("Update failed");
       }
     } catch (error) {
       console.error("Error updating request:", error);
-      toast.error("Không thể cập nhật yêu cầu.");
+      toast.error("Không thể cập nhật lịch hẹn. Vui lòng thử lại.", {
+        position: "top-center",
+        autoClose: 3000,
+      });
     } finally {
       // Reset form
       setIsUpdating(false);
@@ -228,7 +278,7 @@ const BookingDetailsUser = () => {
                 {booking.postImages && booking.postImages.length > 0 && (
                   <div className="post-image">
                     <img
-                      src={booking.postImages[0].url}
+                      src={booking.postImages[0].url || "/placeholder.svg"}
                       alt={booking.postTitle}
                       className="header-image"
                       onError={(e) => {
@@ -245,9 +295,13 @@ const BookingDetailsUser = () => {
                     <Home className="icon" />
                     {booking.postTitle}
                   </Link>
-                  <p className="booking-id">Mã đặt lịch: #{booking._id.slice(-8)}</p>
+                  <p className="booking-id">
+                    Mã đặt lịch: #{booking._id.slice(-8)}
+                  </p>
                   <div className="quick-stats">
-                    <span className="stat-item">👁️ {booking.postViews} lượt xem</span>
+                    <span className="stat-item">
+                      👁️ {booking.postViews} lượt xem
+                    </span>
                   </div>
                 </div>
               </div>
@@ -260,7 +314,8 @@ const BookingDetailsUser = () => {
                     <p className="booking-info">
                       <Calendar className="icon" />
                       <span>
-                        <strong>Ngày và Giờ Hẹn:</strong><br />
+                        <strong>Ngày và Giờ Hẹn:</strong>
+                        <br />
                         {new Date(booking.date_time).toLocaleString("vi-VN", {
                           year: "numeric",
                           month: "long",
@@ -268,20 +323,23 @@ const BookingDetailsUser = () => {
                           hour: "2-digit",
                           minute: "2-digit",
                           hour12: false,
-                          weekday: "long"
+                          weekday: "long",
                         })}
                       </span>
                     </p>
                     <p className="booking-info">
                       <Clock className="icon" />
                       <span>
-                        <strong>Đã tạo:</strong><br />
+                        <strong>Đã tạo:</strong>
+                        <br />
                         {getDaysAgo(booking.createdAt)} ngày trước
                       </span>
                     </p>
                     <p className="booking-info status-info">
                       <strong>Trạng thái:</strong>
-                      <span className={`status ${booking.status.toLowerCase()}`}>
+                      <span
+                        className={`status ${booking.status.toLowerCase()}`}
+                      >
                         {getStatusText(booking.status)}
                       </span>
                     </p>
@@ -296,13 +354,19 @@ const BookingDetailsUser = () => {
                       <div className="landlord-details">
                         <p className="booking-info">
                           <User className="icon" />
-                          <span><strong>Tên:</strong> {booking.landlordInfo.username || "N/A"}</span>
+                          <span>
+                            <strong>Tên:</strong>{" "}
+                            {booking.landlordInfo.username || "N/A"}
+                          </span>
                         </p>
                         <p className="booking-info">
                           <Phone className="icon" />
                           <span>
                             <strong>Số điện thoại:</strong>
-                            <a href={`tel:${booking.landlordInfo.phone}`} className="contact-link">
+                            <a
+                              href={`tel:${booking.landlordInfo.phone}`}
+                              className="contact-link"
+                            >
                               {booking.landlordInfo.phone || "N/A"}
                             </a>
                           </span>
@@ -311,7 +375,10 @@ const BookingDetailsUser = () => {
                           <Mail className="icon" />
                           <span>
                             <strong>Email:</strong>
-                            <a href={`mailto:${booking.landlordInfo.email}`} className="contact-link">
+                            <a
+                              href={`mailto:${booking.landlordInfo.email}`}
+                              className="contact-link"
+                            >
                               {booking.landlordInfo.email || "N/A"}
                             </a>
                           </span>
@@ -334,22 +401,31 @@ const BookingDetailsUser = () => {
                 {booking.status === "Pending" && (
                   <>
                     <button
-                      onClick={() => handleUpdate(booking._id, booking.date_time)}
+                      onClick={() =>
+                        handleUpdate(booking._id, booking.date_time)
+                      }
                       className="btn btn-accept"
                     >
                       <Check className="icon" />
                       Cập nhật thời gian
                     </button>
-                    <p className="status-message">⏳ Đang chờ chủ trọ xác nhận</p>
+                    <p className="status-message">
+                      ⏳ Đang chờ chủ trọ xác nhận
+                    </p>
                   </>
                 )}
                 {booking.status === "Accepted" && (
                   <>
-                    <p className="status-message success">✅ Đã được chấp nhận. Hãy liên hệ chủ trọ để xem phòng.</p>
+                    <p className="status-message success">
+                      ✅ Đã được chấp nhận. Hãy liên hệ chủ trọ để xem phòng.
+                    </p>
                   </>
                 )}
                 {booking.status === "Declined" && (
-                  <p className="status-message declined">❌ Đã bị từ chối. Bạn có thể tìm phòng khác hoặc liên hệ chủ trọ.</p>
+                  <p className="status-message declined">
+                    ❌ Đã bị từ chối. Bạn có thể tìm phòng khác hoặc liên hệ chủ
+                    trọ.
+                  </p>
                 )}
                 <button
                   onClick={() => handleDelete(booking._id)}
@@ -366,7 +442,10 @@ const BookingDetailsUser = () => {
         <div className="no-bookings">
           <div className="no-bookings-icon">📅</div>
           <h3>Chưa có lịch đặt phòng nào</h3>
-          <p>Bạn chưa đặt lịch xem phòng nào. Hãy tìm kiếm và đặt lịch xem phòng ngay!</p>
+          <p>
+            Bạn chưa đặt lịch xem phòng nào. Hãy tìm kiếm và đặt lịch xem phòng
+            ngay!
+          </p>
           <Link to="/" className="btn btn-primary">
             <Home className="icon" />
             Tìm phòng trọ ngay
@@ -401,9 +480,7 @@ const BookingDetailsUser = () => {
                 onChange={(date) => setNewDate(date)}
                 dateFormat="dd/MM/yyyy"
                 placeholderText="Chọn ngày (từ hôm nay)"
-                customInput={
-                  <input className="datetime-input" />
-                }
+                customInput={<input className="datetime-input" />}
                 minDate={minDate}
                 filterDate={(date) => !isDateDisabled(date)}
               />
@@ -449,14 +526,17 @@ const BookingDetailsUser = () => {
               <div className="time-preview">
                 <div className="preview-icon">📅</div>
                 <div className="preview-content">
-                  <p><strong>Lịch hẹn mới:</strong></p>
+                  <p>
+                    <strong>Lịch hẹn mới:</strong>
+                  </p>
                   <p className="preview-datetime">
-                    {newDate.toLocaleDateString('vi-VN', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })} - {newTime}
+                    {newDate.toLocaleDateString("vi-VN", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}{" "}
+                    - {newTime}
                   </p>
                 </div>
               </div>
@@ -483,6 +563,107 @@ const BookingDetailsUser = () => {
                 <X className="icon" />
                 Hủy
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="update-form-overlay">
+          <div className="update-form" style={{ maxWidth: "400px" }}>
+            <button
+              className="close-modal-btn"
+              onClick={() => {
+                setShowDeleteConfirm(false);
+                setDeletingBookingId(null);
+              }}
+            >
+              ✕
+            </button>
+
+            <div style={{ textAlign: "center", padding: "20px 0" }}>
+              <div style={{ fontSize: "48px", marginBottom: "16px" }}>🗑️</div>
+              <h3
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "600",
+                  marginBottom: "12px",
+                  color: "#dc3545",
+                  paddingRight: "0",
+                }}
+              >
+                Xác nhận xóa yêu cầu
+              </h3>
+              <p
+                style={{
+                  fontSize: "14px",
+                  color: "#6b7280",
+                  marginBottom: "24px",
+                  lineHeight: "1.5",
+                  textAlign: "center",
+                }}
+              >
+                Bạn có chắc chắn muốn xóa yêu cầu đặt lịch này không?
+                <br />
+                <strong>Hành động này không thể hoàn tác.</strong>
+              </p>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: "12px",
+                  justifyContent: "center",
+                }}
+              >
+                <button
+                  onClick={confirmDelete}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#dc2626",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseOver={(e) =>
+                    (e.target.style.backgroundColor = "#b91c1c")
+                  }
+                  onMouseOut={(e) =>
+                    (e.target.style.backgroundColor = "#dc2626")
+                  }
+                >
+                  Xác nhận xóa
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setDeletingBookingId(null);
+                  }}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#f3f4f6",
+                    color: "#374151",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseOver={(e) =>
+                    (e.target.style.backgroundColor = "#e5e7eb")
+                  }
+                  onMouseOut={(e) =>
+                    (e.target.style.backgroundColor = "#f3f4f6")
+                  }
+                >
+                  Hủy bỏ
+                </button>
+              </div>
             </div>
           </div>
         </div>

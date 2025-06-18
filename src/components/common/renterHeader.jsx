@@ -15,6 +15,8 @@ const RenterHeader = () => {
   const notificationRef = useRef(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
+  const [showManagementMenu, setShowManagementMenu] = useState(false);
+  const managementMenuRef = useRef(null);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -45,6 +47,13 @@ const RenterHeader = () => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setShowUserMenu(false);
       }
+
+      if (
+        managementMenuRef.current &&
+        !managementMenuRef.current.contains(event.target)
+      ) {
+        setShowManagementMenu(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -61,20 +70,9 @@ const RenterHeader = () => {
     setShowUserMenu(!showUserMenu);
   };
 
-  // Get user's initials for avatar
-  {
-    /*} const getUserInitials = () => {
-    if (!user || !user.username) return "PT";
-
-    const nameParts = user.username.split(" ");
-    if (nameParts.length >= 2) {
-      return (
-        nameParts[0][0] + nameParts[nameParts.length - 1][0]
-      ).toUpperCase();
-    }
-    return nameParts[0].substring(0, 2).toUpperCase();
-  };*/
-  }
+  const toggleManagementMenu = () => {
+    setShowManagementMenu(!showManagementMenu);
+  };
 
   // Get user's display name
   const getDisplayName = () => {
@@ -98,9 +96,6 @@ const RenterHeader = () => {
               <Link to="/listings" style={styles.navLink}>
                 Phòng trọ
               </Link>
-              {/* <Link to="/rent-house" style={styles.navLink}>
-                Nhà nguyên căn
-              </Link>*/}
               <div style={styles.dropdownContainer}>
                 <Link to="/apartment" style={styles.navLinkWithDropdown}>
                   Căn hộ
@@ -109,18 +104,9 @@ const RenterHeader = () => {
               <Link to="/shared" style={styles.navLink}>
                 Ở ghép
               </Link>
-              {/* <Link to="/rent-space" style={styles.navLink}>
-                Mặt bằng
-              </Link>*/}
               <Link to="/Blog" style={styles.navLink}>
-                Blog
+                Tin tức
               </Link>
-              {/* <Link
-                to="/pricing"
-                style={{ ...styles.navLink, ...styles.lastNavItem }}
-              >
-                Bảng giá dịch vụ
-              </Link>*/}
             </nav>
           </div>
 
@@ -143,25 +129,77 @@ const RenterHeader = () => {
               <span>Tin đã lưu</span>
             </Link>
 
-            {/* Management */}
-            <Link to="/listingLandlord" style={styles.actionButton}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={styles.actionIcon}
+            {/* Management Dropdown */}
+            <div style={styles.managementContainer} ref={managementMenuRef}>
+              <button
+                onClick={toggleManagementMenu}
+                style={styles.managementButton}
               >
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-              </svg>
-              <span>Quản lý</span>
-            </Link>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={styles.actionIcon}
+                >
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <span>Quản lý</span>
+                <MdKeyboardArrowDown style={styles.dropdownIcon} />
+              </button>
+
+              {showManagementMenu && (
+                <div style={styles.managementMenuDropdown}>
+                  <Link to="/listingLandlord" style={styles.managementMenuItem}>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={styles.menuItemIcon}
+                    >
+                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                      <polyline points="14,2 14,8 20,8"></polyline>
+                    </svg>
+                    <span>Quản lý bài đăng</span>
+                  </Link>
+                  <Link to="/inforbooking" style={styles.managementMenuItem}>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={styles.menuItemIcon}
+                    >
+                      <rect
+                        x="3"
+                        y="4"
+                        width="18"
+                        height="18"
+                        rx="2"
+                        ry="2"
+                      ></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span>Quản lý đặt lịch</span>
+                  </Link>
+                </div>
+              )}
+            </div>
 
             {/* Notifications */}
             <div style={styles.notificationContainer} ref={notificationRef}>
@@ -335,7 +373,7 @@ const RenterHeader = () => {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                style={{ ...styles.actionIcon, marginRight: '6px' }}
+                style={{ ...styles.actionIcon, marginRight: "6px" }}
               >
                 <path d="M20.91 8.84L8.56 2.23a1.93 1.93 0 0 0-1.81 0L3.1 4.13a2.12 2.12 0 0 0-.05 3.69l12.22 6.93a2 2 0 0 0 1.94 0L21 12.51a2.12 2.12 0 0 0-.09-3.67z"></path>
                 <path d="M3.09 8.84v7.2a2.06 2.06 0 0 0 1.3 1.87l10.82 4.07a2.19 2.19 0 0 0 1.8-.01l4.91-2a1.99 1.99 0 0 0 1.1-1.83V12"></path>
@@ -348,13 +386,13 @@ const RenterHeader = () => {
               onClick={() => setOpen(true)}
               style={{
                 ...styles.packageButton,
-                minWidth: 'auto', // Override Material-UI default minWidth
-                textTransform: 'none', // Không viết hoa chữ cái đầu
-                fontFamily: 'inherit', // Sử dụng font family giống như Link
-                boxShadow: 'none', // Bỏ shadow mặc định của Material-UI
-                '&:hover': {
-                  boxShadow: 'none' // Bỏ shadow khi hover
-                }
+                minWidth: "auto",
+                textTransform: "none",
+                fontFamily: "inherit",
+                boxShadow: "none",
+                "&:hover": {
+                  boxShadow: "none",
+                },
               }}
               startIcon={
                 <svg
@@ -365,7 +403,7 @@ const RenterHeader = () => {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  style={styles.actionIcon} // Bỏ marginRight vì startIcon tự động có spacing
+                  style={styles.actionIcon}
                 >
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -375,7 +413,6 @@ const RenterHeader = () => {
               Nhận tin
             </Button>
 
-            {/* Thêm popup form */}
             <PostAlertSubscriptionForm
               open={open}
               onClose={() => setOpen(false)}
@@ -396,21 +433,21 @@ const styles = {
     backgroundColor: "#0056b3",
   },
   packageButton: {
-    display: 'flex',
-    alignItems: 'center',
-    backgroundColor: '#38a169',
-    color: 'white',
-    textDecoration: 'none',
-    padding: '7px 14px',
-    borderRadius: '4px',
-    fontSize: '14px',
-    fontWeight: '500',
-    marginLeft: '4px',
-    minWidth: '85px', // Thêm minWidth để đảm bảo cùng kích thước
-    justifyContent: 'center', // Center content
-    height: '32px', // Fixed height
-    border: 'none', // Cho Material-UI Button
-    cursor: 'pointer', // Cho Material-UI Button
+    display: "flex",
+    alignItems: "center",
+    backgroundColor: "#38a169",
+    color: "white",
+    textDecoration: "none",
+    padding: "7px 14px",
+    borderRadius: "4px",
+    fontSize: "14px",
+    fontWeight: "500",
+    marginLeft: "4px",
+    minWidth: "85px",
+    justifyContent: "center",
+    height: "32px",
+    border: "none",
+    cursor: "pointer",
   },
   header: {
     backgroundColor: "#0056b3",
@@ -515,6 +552,50 @@ const styles = {
   actionIcon: {
     width: "16px",
     height: "16px",
+  },
+  // Management dropdown styles
+  managementContainer: {
+    position: "relative",
+  },
+  managementButton: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    color: "white",
+    textDecoration: "none",
+    fontSize: "14px",
+    fontWeight: "400",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: 0,
+    whiteSpace: "nowrap",
+  },
+  managementMenuDropdown: {
+    position: "absolute",
+    top: "40px",
+    right: "0",
+    width: "200px",
+    backgroundColor: "white",
+    borderRadius: "4px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+    zIndex: 1000,
+    overflow: "hidden",
+  },
+  managementMenuItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "12px 16px",
+    color: "#374151",
+    textDecoration: "none",
+    fontSize: "14px",
+    cursor: "pointer",
+    borderBottom: "1px solid #e5e7eb",
+    transition: "background-color 0.2s",
+    "&:hover": {
+      backgroundColor: "#f9fafb",
+    },
   },
   notificationContainer: {
     position: "relative",
