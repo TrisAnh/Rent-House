@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   getPostById,
-  getTopViewedPosts,
+  getTopViewedPostsPastWeek,
   incrementViewCount,
 } from "../api/post";
 import { getUserById } from "../api/users";
@@ -68,7 +68,7 @@ import {
   FaFacebook,
 } from "react-icons/fa";
 import Map from "./Map";
-import { createFavourite, removeFavourite } from "../api/favourites";
+import { createFavourite, removeFavourite, getFavorites} from "../api/favourites";
 
 const ListingDetail = () => {
   const { id } = useParams();
@@ -113,7 +113,7 @@ const ListingDetail = () => {
 
     const fetchFeaturedListings = async () => {
       try {
-        const response = await getTopViewedPosts();
+        const response = await getTopViewedPostsPastWeek();
         setFeaturedListings(response.data || []);
       } catch (err) {
         console.error("Error fetching featured listings:", err);
@@ -125,9 +125,35 @@ const ListingDetail = () => {
       fetchFeaturedListings();
     }
 
-    // Scroll to top when component mounts
     window.scrollTo(0, 0);
   }, [id]);
+
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+      if (!user || !id) return; 
+      
+      try {
+        const response = await getFavorites();
+        const favorites = response.data || [];
+        
+        const favoriteItem = favorites.find(fav => fav.id_post._id === id);
+        
+        if (favoriteItem) {
+          setIsFavorited(true);
+          setIdFavorite(favoriteItem._id);
+        } else {
+          setIsFavorited(false);
+          setIdFavorite(null);
+        }
+      } catch (err) {
+        console.error("Error checking favorite status:", err);
+        setIsFavorited(false);
+        setIdFavorite(null);
+      }
+    };
+
+    checkFavoriteStatus();
+  }, [user, id]); // Chạy lại khi user hoặc id thay đổi
 
   const toggleFavorite = async () => {
     if (!user) {
@@ -1187,7 +1213,7 @@ const ListingDetail = () => {
               {/* Featured Listings Section */}
               <div className="bg-white rounded-xl shadow-lg p-6 mt-8">
                 <h3 className="text-xl font-bold text-indigo-900 mb-4">
-                  Tin đăng nổi bật
+                  Tin đăng nổi bật trong tuần
                 </h3>
                 <div className="space-y-4">
                   {featuredListings.slice(0, 5).map((post) => (

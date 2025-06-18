@@ -5,6 +5,9 @@ export const createPost = (postData) => {
 export const getTopViewedPosts = (data) => {
   return axiosInstance.get("/post/top-views", data);
 };
+export const getTopViewedPostsPastWeek = (data) => {
+  return axiosInstance.get("/post/top-hot", data);
+};
 export const searchPost = (params) => {
   return axiosInstance.get("/post/search", { params });
 };
