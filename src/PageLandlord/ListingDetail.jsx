@@ -162,14 +162,12 @@ export default function ListingDetailLandlord() {
       await updateAcceptRequest(requestId);
       setNotification("Đã chấp nhận đặt phòng thành công");
       setIsBookingModalOpen(false);
-      // Refresh the booking requests
       if (selectedBooking && selectedBooking._id) {
         const updatedRequests = await getRequestByPostId(selectedBooking._id);
         setBookingRequests(updatedRequests);
       }
     } catch (error) {
       console.error("Lỗi khi chấp nhận đặt phòng:", error);
-      setNotification("Không thể chấp nhận đặt phòng. Vui lòng thử lại!");
     }
   };
 
@@ -312,10 +310,6 @@ export default function ListingDetailLandlord() {
                 </div>
               </div>
               <div className="flex justify-between items-center text-sm text-gray-600 mb-4">
-                <span className="flex items-center">
-                  <Star className="w-5 h-5 mr-1 text-yellow-400" />{" "}
-                  {listing.averageRating}/5
-                </span>
                 <span className="flex items-center">
                   <Eye className="w-5 h-5 mr-1" /> {listing.views} lượt xem
                 </span>

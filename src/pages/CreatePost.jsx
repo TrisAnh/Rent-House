@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
@@ -33,6 +34,7 @@ import {
   FaUtensils,
   FaBuilding,
 } from "react-icons/fa";
+import { getPackage } from "../api/package";
 
 const CreatePost = () => {
   const [formData, setFormData] = useState({
@@ -74,9 +76,50 @@ const CreatePost = () => {
   const [pendingPriceEvaluation, setPendingPriceEvaluation] = useState(null);
   const [pendingDuplicateImages, setPendingDuplicateImages] = useState([]);
 
+  const [hasActivePackage, setHasActivePackage] = useState(false);
+  const [packageLoading, setPackageLoading] = useState(true);
+  const [packageError, setPackageError] = useState("");
+
+  const navigate = useNavigate();
+
   useEffect(() => {
-    fetchUserProfile();
+    checkUserPackage();
   }, []);
+
+
+  useEffect(() => {
+    if (hasActivePackage) {
+      fetchUserProfile();
+    }
+  }, [hasActivePackage]);
+
+  const checkUserPackage = async () => {
+    try {
+      setPackageLoading(true);
+      const response = await getPackage();
+      console.log("Package response:", response);
+      const packages = response.data || [];
+      
+      // Kiểm tra xem có gói đang hoạt động không
+      const activePackage = packages.find(pkg => {
+        const currentDate = new Date();
+        const expiresAt = new Date(pkg.expiresAt);
+        return pkg.isActive === true && expiresAt > currentDate;
+      });
+
+      setHasActivePackage(!!activePackage);
+      
+      if (!activePackage) {
+        setPackageError("Bạn cần mua gói dịch vụ để có thể đăng bài!");
+      }
+    } catch (error) {
+      console.error("Lỗi khi kiểm tra gói:", error);
+      setPackageError("Không thể kiểm tra trạng thái gói dịch vụ");
+      setHasActivePackage(false);
+    } finally {
+      setPackageLoading(false);
+    }
+  };
 
   const fetchUserProfile = async () => {
     try {
@@ -242,9 +285,52 @@ const CreatePost = () => {
     }
   };
 
-  // Thêm sau hàm handleSubmit:
+  if (packageLoading) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Đang kiểm tra gói dịch vụ...</p>
+          </div>
+        </div>
+      );
+    }
 
-  // Hàm xác nhận đăng bài với warnings
+    if (!hasActivePackage) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+          <div className="text-6xl mb-6">🚫</div>
+          
+          <h2 className="text-2xl font-bold text-red-600 mb-4">
+            Không thể tạo bài đăng
+          </h2>
+          
+          <p className="text-gray-600 mb-6 leading-relaxed">
+            Bạn cần mua gói dịch vụ để có thể đăng bài cho thuê. 
+            Vui lòng chọn gói phù hợp với nhu cầu của bạn.
+          </p>
+          
+          <div className="space-y-3">
+            <button
+              onClick={() => navigate('/package')}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition duration-200"
+            >
+              Xem các gói dịch vụ
+            </button>
+            
+            <button
+              onClick={() => navigate('/')}
+              className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 px-6 rounded-lg transition duration-200"
+            >
+              Về trang chủ
+            </button>
+          </div>
+          
+        </div>
+      </div>
+    );
+  }
   const confirmPostWithWarnings = async () => {
     try {
       const token = localStorage.getItem("token");

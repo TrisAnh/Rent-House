@@ -16,36 +16,36 @@ const RoomBookingForm = ({ onClose }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // NEW STATES cho booking check
   const [hasExistingBooking, setHasExistingBooking] = useState(false);
   const [existingBooking, setExistingBooking] = useState(null);
   const [checkingBooking, setCheckingBooking] = useState(true);
 
-  // Helper functions
   const formatDate = (dateTime) => {
-    if (!dateTime) return 'Chưa xác định';
-    try {
-      return new Date(dateTime).toLocaleDateString('vi-VN', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch {
-      return 'Ngày không hợp lệ';
-    }
+    if (!dateTime) return "Chưa xác định";
+    
+    const date = new Date(dateTime);
+    
+    return new Intl.DateTimeFormat('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh', // Chỉ định rõ timezone
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).format(date);
   };
-
+  
+  // Sửa function formatTime
   const formatTime = (dateTime) => {
-    if (!dateTime) return 'Chưa xác định';
-    try {
-      return new Date(dateTime).toLocaleTimeString('vi-VN', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      });
-    } catch {
-      return 'Giờ không hợp lệ';
-    }
+    if (!dateTime) return "Chưa xác định";
+    
+    const date = new Date(dateTime);
+    
+    return new Intl.DateTimeFormat('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh', // Chỉ định rõ timezone
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false // Sử dụng format 24h
+    }).format(date);
   };
 
   const getStatusColor = (status) => {
@@ -199,30 +199,40 @@ const RoomBookingForm = ({ onClose }) => {
 
   const minDate = new Date();
 
-  const handleBooking = async (e) => {
+    const handleBooking = async (e) => {
     e.preventDefault();
     if (!date || !time) {
       alert("Vui lòng chọn ngày và giờ");
       return;
     }
-
+  
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const selectedDate = new Date(date);
     selectedDate.setHours(0, 0, 0, 0);
-
+  
     if (selectedDate < today) {
       alert("Không thể đặt lịch cho ngày trong quá khứ!");
       return;
     }
-
+  
+    // FIX: Tạo datetime đúng timezone Việt Nam
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    // Tạo ISO string với timezone Việt Nam (+07:00)
+    const isoString = `${year}-${month}-${day}T${time}:00+07:00`;
+    
+    console.log("Sending datetime:", isoString); // Debug log
+  
     const requestData = {
       id_user_rent: user.id,
       id_renter: landlord,
       id_post: id,
-      date_time: new Date(`${date.toISOString().split("T")[0]}T${time}`),
+      date_time: isoString, // Gửi với timezone rõ ràng
     };
-
+  
     try {
       const response = await createRequest(requestData);
       alert("Đặt lịch thành công!");
