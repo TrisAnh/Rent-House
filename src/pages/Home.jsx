@@ -24,6 +24,9 @@ import {
   getDistricts,
   getAllPosts,
 } from "../api/post";
+import { FaRegHeart } from "react-icons/fa";
+import { useAuth } from "../hooks/useAuth";
+import { createFavourite, getFavorites, removeFavourite } from "../api/favourites";
 
 const Home = () => {
   const [featuredProperties, setFeaturedProperties] = useState([]);
@@ -51,6 +54,176 @@ const Home = () => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  const [favourites, setFavourites] = useState(new Set());
+  const [loadingFavourite, setLoadingFavourite] = useState(new Set());
+
+  const { user } = useAuth();
+
+
+  const isFavourite = (postId) => {
+    console.log('=== CHECK FAVOURITE ===');
+    console.log('Checking postId:', postId, 'Type:', typeof postId);
+    console.log('Favourites Map:', favourites);
+    console.log('Has favourite:', favourites.has(postId));
+    console.log('Has string version:', favourites.has(String(postId)));
+    return favourites.has(postId);
+  };
+
+  const loadFavourites = async () => {
+    if (!user) {
+      setFavourites(new Map());
+      return;
+    }
+
+    try {
+      const response = await getFavorites();
+      console.log('Favourites response:', response.data);
+
+      const favouriteMap = new Map();
+
+      if (response.data && Array.isArray(response.data)) {
+        response.data.forEach(fav => {
+          const postId = String(fav.id_post._id);
+          const favId = fav.id || fav._id;
+          favouriteMap.set(postId, favId);
+          console.log(`Loaded favourite: ${postId} -> ${favId}`);
+        });
+      }
+
+      console.log('Final favourites map:', favouriteMap);
+      setFavourites(favouriteMap);
+    } catch (error) {
+      console.error('Error loading favourites:', error);
+      setFavourites(new Map());
+    }
+  };
+
+  const toggleFavourite = async (postId, event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!user) {
+      window.location.href = '/login';
+      return;
+    }
+
+    if (loadingFavourite.has(postId)) {
+      console.log('Already loading, skipping...');
+      return;
+    }
+
+    console.log('=== TOGGLE FAVOURITE ===');
+    console.log('PostId:', postId, 'Type:', typeof postId);
+    console.log('Current isFavourite:', isFavourite(postId));
+
+    setLoadingFavourite(prev => new Set(prev).add(postId));
+
+    try {
+      if (isFavourite(postId)) {
+        // REMOVE FROM FAVOURITES
+        console.log('Removing from favourites...');
+
+        // TÌM favouriteId bằng cả 2 cách
+        let favouriteId = favourites.get(postId) || favourites.get(String(postId));
+
+        if (!favouriteId) {
+          console.error('No favouriteId found for postId:', postId);
+          return;
+        }
+
+        await removeFavourite(favouriteId);
+
+        setFavourites(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(postId);
+          newMap.delete(String(postId)); // XÓA CẢ 2 VERSION
+          return newMap;
+        });
+
+        console.log('Removed successfully');
+      } else {
+        // ADD TO FAVOURITES - KIỂM TRA TRÙNG TRƯỚC KHI ADD
+        console.log('Adding to favourites...');
+
+        // KIỂM TRA XEM ĐÃ CÓ CHƯA (double check)
+        if (favourites.has(postId) || favourites.has(String(postId))) {
+          console.log('Already exists, skipping add...');
+          return;
+        }
+
+        const response = await createFavourite(user.id, postId);
+        console.log('Add favourite response:', response);
+
+        setFavourites(prev => {
+          const newMap = new Map(prev);
+          // LƯU CÙNG KIỂU DỮ LIỆU VỚI API RESPONSE
+          const savePostId = String(postId); // Hoặc postId tùy theo API
+          newMap.set(savePostId, response.data.id || response.data._id || postId);
+          return newMap;
+        });
+
+        console.log('Added successfully');
+      }
+    } catch (error) {
+      console.error('Error toggling favourite:', error);
+      // ROLLBACK STATE NẾU CÓ LỖI
+      loadFavourites(); // Reload lại từ server
+    } finally {
+      setLoadingFavourite(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(postId);
+        return newSet;
+      });
+    }
+  };
+
+  useEffect(() => {
+    loadFavourites();
+  }, [user]);
+
+  const FavouriteButton = ({ postId, className = "" }) => {
+    // ĐỒNG NHẤT KIỂU DỮ LIỆU
+    const normalizedPostId = String(postId);
+    const isLoading = loadingFavourite.has(postId);
+    const isFav = isFavourite(normalizedPostId);
+
+    console.log('FavouriteButton render:', {
+      originalPostId: postId,
+      normalizedPostId,
+      isFav,
+      isLoading
+    });
+
+    return (
+      <button
+        onClick={(e) => toggleFavourite(normalizedPostId, e)}
+        disabled={isLoading}
+        className={`p-2 rounded-full transition-all duration-200 hover:scale-110 focus:outline-none ${className}`}
+        style={{
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+        }}
+        title={
+          !user
+            ? "Đăng nhập để thêm vào yêu thích"
+            : isFav
+              ? "Bỏ khỏi danh sách yêu thích"
+              : "Thêm vào danh sách yêu thích"
+        }
+      >
+        {isLoading ? (
+          <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+        ) : isFav ? (
+          <FaHeart className="w-5 h-5 text-red-500" />
+        ) : (
+          <FaRegHeart className="w-5 h-5 text-gray-600 hover:text-red-500 transition-colors" />
+        )}
+      </button>
+    );
+  };
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -123,21 +296,21 @@ const Home = () => {
         }
 
         tags.push(
-        <span
-          key={`warning-${index}`}
-          className={`inline-flex items-center text-xs px-2 py-1 rounded-full border font-medium mr-1 mb-1 ${tagStyle}`}
-          title={warning} // Tooltip hiện full text
-        >
-          <span className="mr-1">{icon}</span>
-          {warning} {/* BỎ GIỚI HẠN .substring(0, 25) */}
-        </span>
+          <span
+            key={`warning-${index}`}
+            className={`inline-flex items-center text-xs px-2 py-1 rounded-full border font-medium mr-1 mb-1 ${tagStyle}`}
+            title={warning} // Tooltip hiện full text
+          >
+            <span className="mr-1">{icon}</span>
+            {warning} {/* BỎ GIỚI HẠN .substring(0, 25) */}
+          </span>
         );
       });
     }
 
     // Hiển thị price evaluation tag nếu không có warning về giá
-    if (property.priceEvaluation && property.priceEvaluation.level && 
-        !property.warnings?.some(w => w.toLowerCase().includes("giá"))) {
+    if (property.priceEvaluation && property.priceEvaluation.level &&
+      !property.warnings?.some(w => w.toLowerCase().includes("giá"))) {
       let evalTag = null;
       const level = property.priceEvaluation.level;
 
@@ -182,8 +355,8 @@ const Home = () => {
     }
 
     // Hiển thị duplicate image tag nếu có
-    if (property.imageCheck && property.imageCheck.hasDuplicates && 
-        !property.warnings?.some(w => w.toLowerCase().includes("ảnh") || w.toLowerCase().includes("trùng"))) {
+    if (property.imageCheck && property.imageCheck.hasDuplicates &&
+      !property.warnings?.some(w => w.toLowerCase().includes("ảnh") || w.toLowerCase().includes("trùng"))) {
       tags.push(
         <span
           key="image-duplicate"
@@ -351,9 +524,12 @@ const Home = () => {
                       Hot
                     </span>
                   )}
-                  <button className="bg-white bg-opacity-80 p-1.5 rounded-full text-red-500 hover:bg-opacity-100 transition-all ml-auto">
-                    <FaHeart className="w-4 h-4" />
-                  </button>
+                  <div className="ml-auto">
+                    <FavouriteButton
+                      postId={property._id}
+                      className="shadow-lg"
+                    />
+                  </div>
                 </div>
                 {property.roomType && (
                   <span className="absolute bottom-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-md font-medium">
@@ -366,12 +542,12 @@ const Home = () => {
               <h3 className="text-lg font-bold mb-2 text-gray-800 line-clamp-2 h-14">
                 {property.title}
               </h3>
-              
+
               {/* THÊM WARNING TAGS */}
               <div className="mb-3 min-h-[28px]">
                 {renderWarningTags(property)}
               </div>
-              
+
               <p className="text-sm text-gray-600 mb-3 flex items-start">
                 <FaMapMarkerAlt className="mr-1 text-blue-500 mt-1 flex-shrink-0" />
                 <span className="line-clamp-2 h-10">
@@ -506,9 +682,8 @@ const Home = () => {
                 name="location"
                 value={searchParams.location}
                 onChange={handleSearchChange}
-                className={`w-full p-3 rounded-lg border ${
-                  errors.location ? "border-red-500" : "border-gray-300"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
+                className={`w-full p-3 rounded-lg border ${errors.location ? "border-red-500" : "border-gray-300"
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
               />
               {errors.location && (
                 <p className="text-red-500 text-xs mt-1">{errors.location}</p>
@@ -522,9 +697,8 @@ const Home = () => {
                 name="roomType"
                 value={searchParams.roomType}
                 onChange={handleSearchChange}
-                className={`w-full p-3 rounded-lg border ${
-                  errors.roomType ? "border-red-500" : "border-gray-300"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
+                className={`w-full p-3 rounded-lg border ${errors.roomType ? "border-red-500" : "border-gray-300"
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
               >
                 <option value="">Tất cả loại phòng</option>
                 {roomTypes.map((type) => (
@@ -548,9 +722,8 @@ const Home = () => {
                   name="priceMin"
                   value={searchParams.priceMin}
                   onChange={handleSearchChange}
-                  className={`w-full p-3 rounded-lg border ${
-                    errors.priceMin ? "border-red-500" : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
+                  className={`w-full p-3 rounded-lg border ${errors.priceMin ? "border-red-500" : "border-gray-300"
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
                 />
                 {errors.priceMin && (
                   <p className="text-red-500 text-xs mt-1">{errors.priceMin}</p>
@@ -566,9 +739,8 @@ const Home = () => {
                   name="priceMax"
                   value={searchParams.priceMax}
                   onChange={handleSearchChange}
-                  className={`w-full p-3 rounded-lg border ${
-                    errors.priceMax ? "border-red-500" : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
+                  className={`w-full p-3 rounded-lg border ${errors.priceMax ? "border-red-500" : "border-gray-300"
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
                 />
                 {errors.priceMax && (
                   <p className="text-red-500 text-xs mt-1">{errors.priceMax}</p>
@@ -585,9 +757,8 @@ const Home = () => {
                   ? "Ẩn tìm kiếm nâng cao"
                   : "Tìm kiếm nâng cao"}
                 <FaChevronDown
-                  className={`ml-1 transform transition-transform ${
-                    isAdvancedSearch ? "rotate-180" : ""
-                  }`}
+                  className={`ml-1 transform transition-transform ${isAdvancedSearch ? "rotate-180" : ""
+                    }`}
                 />
               </button>
             </div>
@@ -603,9 +774,8 @@ const Home = () => {
                     name="title"
                     value={searchParams.title}
                     onChange={handleSearchChange}
-                    className={`w-full p-3 rounded-lg border ${
-                      errors.title ? "border-red-500" : "border-gray-300"
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
+                    className={`w-full p-3 rounded-lg border ${errors.title ? "border-red-500" : "border-gray-300"
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
                   />
                   {errors.title && (
                     <p className="text-red-500 text-xs mt-1">{errors.title}</p>
@@ -621,9 +791,8 @@ const Home = () => {
                     name="district"
                     value={searchParams.district}
                     onChange={handleSearchChange}
-                    className={`w-full p-3 rounded-lg border ${
-                      errors.district ? "border-red-500" : "border-gray-300"
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
+                    className={`w-full p-3 rounded-lg border ${errors.district ? "border-red-500" : "border-gray-300"
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
                   />
                   {errors.district && (
                     <p className="text-red-500 text-xs mt-1">
@@ -641,9 +810,8 @@ const Home = () => {
                     name="ward"
                     value={searchParams.ward}
                     onChange={handleSearchChange}
-                    className={`w-full p-3 rounded-lg border ${
-                      errors.ward ? "border-red-500" : "border-gray-300"
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
+                    className={`w-full p-3 rounded-lg border ${errors.ward ? "border-red-500" : "border-gray-300"
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
                   />
                   {errors.ward && (
                     <p className="text-red-500 text-xs mt-1">{errors.ward}</p>
@@ -659,9 +827,8 @@ const Home = () => {
                     name="city"
                     value={searchParams.city}
                     onChange={handleSearchChange}
-                    className={`w-full p-3 rounded-lg border ${
-                      errors.city ? "border-red-500" : "border-gray-300"
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
+                    className={`w-full p-3 rounded-lg border ${errors.city ? "border-red-500" : "border-gray-300"
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
                   />
                   {errors.city && (
                     <p className="text-red-500 text-xs mt-1">{errors.city}</p>
@@ -766,9 +933,8 @@ const Home = () => {
                   name="location"
                   value={searchParams.location}
                   onChange={handleSearchChange}
-                  className={`w-full p-3 rounded-lg border ${
-                    errors.location ? "border-red-500" : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
+                  className={`w-full p-3 rounded-lg border ${errors.location ? "border-red-500" : "border-gray-300"
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
                 />
                 {errors.location && (
                   <p className="text-red-500 text-xs mt-1">{errors.location}</p>
@@ -782,9 +948,8 @@ const Home = () => {
                   name="roomType"
                   value={searchParams.roomType}
                   onChange={handleSearchChange}
-                  className={`w-full p-3 rounded-lg border ${
-                    errors.roomType ? "border-red-500" : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
+                  className={`w-full p-3 rounded-lg border ${errors.roomType ? "border-red-500" : "border-gray-300"
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
                 >
                   <option value="">Tất cả loại phòng</option>
                   {roomTypes.map((type) => (
@@ -807,9 +972,8 @@ const Home = () => {
                   name="priceMin"
                   value={searchParams.priceMin}
                   onChange={handleSearchChange}
-                  className={`w-full p-3 rounded-lg border ${
-                    errors.priceMin ? "border-red-500" : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
+                  className={`w-full p-3 rounded-lg border ${errors.priceMin ? "border-red-500" : "border-gray-300"
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
                 />
                 {errors.priceMin && (
                   <p className="text-red-500 text-xs mt-1">{errors.priceMin}</p>
@@ -825,9 +989,8 @@ const Home = () => {
                   name="priceMax"
                   value={searchParams.priceMax}
                   onChange={handleSearchChange}
-                  className={`w-full p-3 rounded-lg border ${
-                    errors.priceMax ? "border-red-500" : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
+                  className={`w-full p-3 rounded-lg border ${errors.priceMax ? "border-red-500" : "border-gray-300"
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
                 />
                 {errors.priceMax && (
                   <p className="text-red-500 text-xs mt-1">{errors.priceMax}</p>
@@ -844,9 +1007,8 @@ const Home = () => {
                   ? "Ẩn tìm kiếm nâng cao"
                   : "Tìm kiếm nâng cao"}
                 <FaChevronDown
-                  className={`ml-1 transform transition-transform ${
-                    isAdvancedSearch ? "rotate-180" : ""
-                  }`}
+                  className={`ml-1 transform transition-transform ${isAdvancedSearch ? "rotate-180" : ""
+                    }`}
                 />
               </button>
               <button
@@ -868,9 +1030,8 @@ const Home = () => {
                     name="title"
                     value={searchParams.title}
                     onChange={handleSearchChange}
-                    className={`w-full p-3 rounded-lg border ${
-                      errors.title ? "border-red-500" : "border-gray-300"
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
+                    className={`w-full p-3 rounded-lg border ${errors.title ? "border-red-500" : "border-gray-300"
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
                   />
                   {errors.title && (
                     <p className="text-red-500 text-xs mt-1">{errors.title}</p>
@@ -886,9 +1047,8 @@ const Home = () => {
                     name="district"
                     value={searchParams.district}
                     onChange={handleSearchChange}
-                    className={`w-full p-3 rounded-lg border ${
-                      errors.district ? "border-red-500" : "border-gray-300"
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
+                    className={`w-full p-3 rounded-lg border ${errors.district ? "border-red-500" : "border-gray-300"
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
                   />
                   {errors.district && (
                     <p className="text-red-500 text-xs mt-1">
@@ -906,9 +1066,8 @@ const Home = () => {
                     name="ward"
                     value={searchParams.ward}
                     onChange={handleSearchChange}
-                    className={`w-full p-3 rounded-lg border ${
-                      errors.ward ? "border-red-500" : "border-gray-300"
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
+                    className={`w-full p-3 rounded-lg border ${errors.ward ? "border-red-500" : "border-gray-300"
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
                   />
                   {errors.ward && (
                     <p className="text-red-500 text-xs mt-1">{errors.ward}</p>
@@ -924,9 +1083,8 @@ const Home = () => {
                     name="city"
                     value={searchParams.city}
                     onChange={handleSearchChange}
-                    className={`w-full p-3 rounded-lg border ${
-                      errors.city ? "border-red-500" : "border-gray-300"
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
+                    className={`w-full p-3 rounded-lg border ${errors.city ? "border-red-500" : "border-gray-300"
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50`}
                   />
                   {errors.city && (
                     <p className="text-red-500 text-xs mt-1">{errors.city}</p>
@@ -978,13 +1136,14 @@ const Home = () => {
                           {topViewedPosts.some(
                             (post) => post._id === property._id
                           ) && (
-                            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                              Hot
-                            </span>
-                          )}
-                          <button className="bg-white bg-opacity-80 p-1.5 rounded-full text-red-500 hover:bg-opacity-100 transition-all ml-auto">
-                            <FaHeart className="w-4 h-4" />
-                          </button>
+                              <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                Hot
+                              </span>
+                            )}
+                          <FavouriteButton
+                            postId={property._id}
+                            className="shadow-lg ml-auto"
+                          />
                         </div>
                         {property.roomType && (
                           <span className="absolute bottom-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-md font-medium">
@@ -997,7 +1156,7 @@ const Home = () => {
                       <h3 className="text-lg font-bold mb-2 text-gray-800 line-clamp-2 h-14">
                         {property.title}
                       </h3>
-                      
+
                       {/* THÊM WARNING TAGS CHO SEARCH RESULTS */}
                       <div className="mb-3 min-h-[28px]">
                         {renderWarningTags(property)}

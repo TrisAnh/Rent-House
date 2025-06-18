@@ -370,7 +370,6 @@ const ListingDetail = () => {
 
   const { phone, address, username, avatar, isOnline } = landlord || {};
 
-  // Mobile tab navigation
   const renderTabContent = () => {
     switch (activeTab) {
       case "details":

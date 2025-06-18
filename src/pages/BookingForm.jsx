@@ -3,7 +3,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { createRequest } from "../api/request";
+import { createRequest, getRequestByUserId, updateDeleteRequest } from "../api/request";
 import { getPostById } from "../api/post";
 
 const RoomBookingForm = ({ onClose }) => {
@@ -16,30 +16,187 @@ const RoomBookingForm = ({ onClose }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // NEW STATES cho booking check
+  const [hasExistingBooking, setHasExistingBooking] = useState(false);
+  const [existingBooking, setExistingBooking] = useState(null);
+  const [checkingBooking, setCheckingBooking] = useState(true);
+
+  // Helper functions
+  const formatDate = (dateTime) => {
+    if (!dateTime) return 'Chưa xác định';
+    try {
+      return new Date(dateTime).toLocaleDateString('vi-VN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch {
+      return 'Ngày không hợp lệ';
+    }
+  };
+
+  const formatTime = (dateTime) => {
+    if (!dateTime) return 'Chưa xác định';
+    try {
+      return new Date(dateTime).toLocaleTimeString('vi-VN', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    } catch {
+      return 'Giờ không hợp lệ';
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'pending': 
+      case 'cho_xac_nhan':
+        return '#f59e0b';
+      case 'approved': 
+      case 'da_xac_nhan':
+        return '#10b981';
+      case 'rejected': 
+      case 'da_tu_choi':
+        return '#ef4444';
+      case 'completed': 
+      case 'hoan_thanh':
+        return '#6366f1';
+      default: 
+        return '#6b7280';
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+      case 'cho_xac_nhan':
+        return 'Chờ xác nhận';
+      case 'approved':
+      case 'da_xac_nhan':
+        return 'Đã xác nhận';
+      case 'rejected':
+      case 'da_tu_choi':
+        return 'Đã từ chối';
+      case 'completed':
+      case 'hoan_thanh':
+        return 'Đã hoàn thành';
+      default: 
+        return 'Không xác định';
+    }
+  };
+
+  // Function kiểm tra booking đã tồn tại
+  const checkExistingBooking = async () => {
+    if (!user || !id) {
+      setCheckingBooking(false);
+      return;
+    }
+
+    try {
+      setCheckingBooking(true);
+      
+      console.log('=== CHECKING EXISTING BOOKING ===');
+      console.log('User ID:', user.id);
+      console.log('Post ID:', id, 'Type:', typeof id);
+      
+      const response = await getRequestByUserId(user.id);
+      
+      console.log('User requests response:', response.data);
+      
+      if (response.data && Array.isArray(response.data)) {
+        // Tìm request cho post hiện tại
+        const existingRequest = response.data.find(request => {
+          return request.id_post === id || 
+                 request.id_post === parseInt(id) ||
+                 String(request.id_post) === String(id);
+        });
+        
+        console.log('Found existing request:', existingRequest);
+        
+        if (existingRequest) {
+          setHasExistingBooking(true);
+          setExistingBooking(existingRequest);
+          console.log('✅ User has existing booking');
+        } else {
+          setHasExistingBooking(false);
+          setExistingBooking(null);
+          console.log('❌ No existing booking found');
+        }
+      } else {
+        setHasExistingBooking(false);
+        setExistingBooking(null);
+      }
+    } catch (error) {
+      console.error("Error checking existing booking:", error);
+      setHasExistingBooking(false);
+      setExistingBooking(null);
+    } finally {
+      setCheckingBooking(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchPostDetails = async () => {
+    const fetchData = async () => {
       try {
+        setLoading(true);
+        
+        // Fetch post details
         const response = await getPostById(id);
         setPostDetails(response.data);
         setLandlord(response.data.landlord);
+
+        // Kiểm tra booking nếu user đã login
+        if (user) {
+          await checkExistingBooking();
+        } else {
+          setCheckingBooking(false);
+        }
       } catch (err) {
+        console.error('Error fetching data:', err);
         setError("Không thể tải thông tin bài đăng.");
+        setCheckingBooking(false);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPostDetails();
-  }, [id]);
+    if (id) {
+      fetchData();
+    }
+  }, [id, user]);
+
+  // Function hủy booking
+  const handleCancelBooking = async () => {
+    if (!window.confirm('Bạn có chắc muốn hủy lịch hẹn này không?')) {
+      return;
+    }
+
+    try {
+
+      const requestId = existingBooking._id || existingBooking.id;
+      await updateDeleteRequest(requestId);
+
+      console.log('Cancelling booking:', existingBooking.id);
+      
+      // Reset state
+      setHasExistingBooking(false);
+      setExistingBooking(null);
+      
+      alert('Đã hủy lịch hẹn thành công! Bạn có thể đặt lịch mới.');
+    } catch (error) {
+      console.error('Error canceling booking:', error);
+      alert('Có lỗi khi hủy lịch hẹn. Vui lòng thử lại.');
+    }
+  };
 
   // THÊM HÀM VALIDATE DATE
   const isDateDisabled = (date) => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set to start of day
+    today.setHours(0, 0, 0, 0);
     return date < today;
   };
 
-  // THÊM MIN DATE (từ hôm nay)
   const minDate = new Date();
 
   const handleBooking = async (e) => {
@@ -49,7 +206,6 @@ const RoomBookingForm = ({ onClose }) => {
       return;
     }
 
-    // THÊM VALIDATION CHO NGÀY QUÁ KHỨ
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const selectedDate = new Date(date);
@@ -77,42 +233,239 @@ const RoomBookingForm = ({ onClose }) => {
     }
   };
 
-  if (loading) return <p style={loadingStyle}>Đang tải...</p>;
-  if (error) return <p style={errorStyle}>{error}</p>;
+  // Styles
+  const containerStyle = {
+    position: 'fixed',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    backgroundColor: 'white',
+    padding: '24px',
+    borderRadius: '16px',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+    zIndex: 1000,
+    width: '90%',
+    maxWidth: '500px',
+    maxHeight: '90vh',
+    overflowY: 'auto'
+  };
 
+  const headerStyle = {
+    fontSize: '24px',
+    fontWeight: 'bold',
+    marginBottom: '16px',
+    textAlign: 'center',
+    color: '#1f2937'
+  };
+
+  const buttonStyle = {
+    padding: '12px 24px',
+    borderRadius: '8px',
+    border: 'none',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    minWidth: '120px'
+  };
+
+  const closeButtonStyle = {
+    position: 'absolute',
+    top: '12px',
+    right: '12px',
+    background: '#f3f4f6',
+    border: 'none',
+    borderRadius: '50%',
+    width: '32px',
+    height: '32px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    color: '#6b7280',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  };
+
+  // Loading state
+  if (loading || checkingBooking) {
+    return (
+      <div style={containerStyle}>
+        <button onClick={onClose} style={closeButtonStyle}>✕</button>
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ fontSize: '24px', marginBottom: '16px' }}>⏳</div>
+          <p>Đang tải thông tin...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div style={containerStyle}>
+        <button onClick={onClose} style={closeButtonStyle}>✕</button>
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ fontSize: '24px', marginBottom: '16px' }}>❌</div>
+          <p style={{ color: '#ef4444' }}>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Existing booking state
+  if (hasExistingBooking && existingBooking) {
+    return (
+      <div style={containerStyle}>
+        <button onClick={onClose} style={closeButtonStyle}>✕</button>
+        
+        <h2 style={headerStyle}>{postDetails?.title || 'Phòng trọ'}</h2>
+        
+        {/* Thông báo đã đặt lịch */}
+        <div style={{
+          backgroundColor: '#fef3c7',
+          border: '1px solid #f59e0b',
+          borderRadius: '12px',
+          padding: '20px',
+          textAlign: 'center',
+          marginBottom: '20px'
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📅</div>
+          <h3 style={{ color: '#92400e', marginBottom: '12px', fontSize: '18px' }}>
+            Bạn đã đặt lịch xem phòng này rồi!
+          </h3>
+          <div style={{ color: '#78350f', fontSize: '14px', lineHeight: '1.6', textAlign: 'left' }}>
+            <p><strong>Mã yêu cầu:</strong> #{existingBooking._id || existingBooking.id}</p>
+            <p><strong>Ngày hẹn:</strong> {formatDate(existingBooking.date_time)}</p>
+            <p><strong>Giờ hẹn:</strong> {formatTime(existingBooking.date_time)}</p>
+            <p style={{ display: 'flex', alignItems: 'center' }}>
+              <strong>Trạng thái:</strong>
+              <span style={{
+                padding: '4px 8px',
+                borderRadius: '4px',
+                backgroundColor: getStatusColor(existingBooking.status),
+                color: 'white',
+                marginLeft: '8px',
+                fontSize: '12px'
+              }}>
+                {getStatusText(existingBooking.status)}
+              </span>
+            </p>
+            {existingBooking.notes && (
+              <p><strong>Ghi chú:</strong> {existingBooking.notes}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Lưu ý */}
+        <div style={{
+          backgroundColor: '#e0f2fe',
+          border: '1px solid #0284c7',
+          borderRadius: '8px',
+          padding: '16px',
+          marginBottom: '20px'
+        }}>
+          <h4 style={{ color: '#0c4a6e', marginBottom: '8px', fontSize: '14px' }}>💡 Lưu ý:</h4>
+          <ul style={{ 
+            color: '#075985', 
+            fontSize: '13px', 
+            lineHeight: '1.4', 
+            margin: 0,
+            paddingLeft: '16px'
+          }}>
+            <li>Chỉ được phép đặt 1 lịch cho mỗi phòng trọ</li>
+            <li>Nếu muốn thay đổi lịch hẹn, vui lòng hủy lịch cũ trước hoặc cập nhật lịch đặt</li>
+            <li>Liên hệ chủ trọ nếu cần hỗ trợ</li>
+          </ul>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+          <button 
+            onClick={handleCancelBooking}
+            style={{
+              ...buttonStyle,
+              backgroundColor: '#dc2626',
+              color: 'white'
+            }}
+          >
+            Hủy lịch hẹn
+          </button>
+          <button 
+            onClick={onClose}
+            style={{
+              ...buttonStyle,
+              backgroundColor: '#6b7280',
+              color: 'white'
+            }}
+          >
+            Đóng
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Normal booking form
   return (
     <div style={containerStyle}>
-      <button onClick={onClose} style={closeButtonStyle}>
-        X
-      </button>
-      <h2 style={headerStyle}>{postDetails.title}</h2>
-      <p style={subHeaderStyle}>Chọn ngày và giờ để đặt lịch</p>
-      <div style={imageContainerStyle}>
+      <button onClick={onClose} style={closeButtonStyle}>✕</button>
+      
+      <h2 style={headerStyle}>{postDetails?.title || 'Đặt lịch xem phòng'}</h2>
+      <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px', textAlign: 'center' }}>
+        Chọn ngày và giờ để đặt lịch
+      </p>
+      
+      <div style={{ marginBottom: '20px' }}>
         <img
-          src={postDetails.images[0]?.url || "/placeholder.svg"}
+          src={postDetails?.images?.[0]?.url || "/placeholder.svg"}
           alt="Hình ảnh phòng"
-          style={imageStyle}
+          style={{
+            width: '100%',
+            height: '200px',
+            objectFit: 'cover',
+            borderRadius: '8px'
+          }}
         />
       </div>
-      <div style={priceStyle}>{postDetails.price.toLocaleString()} VND</div>
-      <form onSubmit={handleBooking} style={formStyle}>
+      
+      <div style={{
+        fontSize: '24px',
+        fontWeight: 'bold',
+        marginBottom: '20px',
+        textAlign: 'center',
+        color: '#1f2937'
+      }}>
+        {postDetails?.price ? `${postDetails.price.toLocaleString()} VND` : 'Liên hệ'}
+      </div>
+      
+      <form onSubmit={handleBooking} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <DatePicker
           selected={date}
           onChange={(date) => setDate(date)}
           dateFormat="dd/MM/yyyy"
           placeholderText="Chọn ngày (từ hôm nay)"
-          customInput={<input style={inputStyle} />}
-          minDate={minDate} // KHÔNG CHO CHỌN NGÀY QUÁ KHỨ
-          filterDate={(date) => !isDateDisabled(date)} // THÊM FILTER
+          customInput={<input style={{
+            width: '100%',
+            padding: '12px',
+            border: '1px solid #ccc',
+            borderRadius: '8px',
+            fontSize: '16px'
+          }} />}
+          minDate={minDate}
+          filterDate={(date) => !isDateDisabled(date)}
         />
         
         <select
           value={time}
           onChange={(e) => setTime(e.target.value)}
-          style={inputStyle}
+          style={{
+            width: '100%',
+            padding: '12px',
+            border: '1px solid #ccc',
+            borderRadius: '8px',
+            fontSize: '16px'
+          }}
         >
           <option value="">Chọn giờ</option>
-          {/* SÁNG */}
           <option value="08:00">08:00 - Sáng</option>
           <option value="08:30">08:30 - Sáng</option>
           <option value="09:00">09:00 - Sáng</option>
@@ -121,8 +474,6 @@ const RoomBookingForm = ({ onClose }) => {
           <option value="10:30">10:30 - Sáng</option>
           <option value="11:00">11:00 - Sáng</option>
           <option value="11:30">11:30 - Sáng</option>
-          
-          {/* CHIỀU */}
           <option value="13:00">13:00 - Chiều</option>
           <option value="13:30">13:30 - Chiều</option>
           <option value="14:00">14:00 - Chiều</option>
@@ -133,8 +484,6 @@ const RoomBookingForm = ({ onClose }) => {
           <option value="16:30">16:30 - Chiều</option>
           <option value="17:00">17:00 - Chiều</option>
           <option value="17:30">17:30 - Chiều</option>
-          
-          {/* TỐI */}
           <option value="18:00">18:00 - Tối</option>
           <option value="18:30">18:30 - Tối</option>
           <option value="19:00">19:00 - Tối</option>
@@ -142,99 +491,25 @@ const RoomBookingForm = ({ onClose }) => {
           <option value="20:00">20:00 - Tối</option>
         </select>
         
-        <button type="submit" style={buttonStyle}>
+        <button 
+          type="submit" 
+          style={{
+            width: '100%',
+            padding: '12px',
+            backgroundColor: '#1f2937',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            fontWeight: '600'
+          }}
+        >
           Đặt Lịch
         </button>
       </form>
     </div>
   );
-};
-
-// ... existing styles ...
-
-const containerStyle = {
-  maxWidth: "400px",
-  margin: "0 auto",
-  padding: "20px",
-  boxShadow: "0 0 10px rgba(0,0,0,0.1)",
-  fontFamily: "Arial, sans-serif",
-  backgroundColor: "#fff",
-  borderRadius: "8px",
-  position: "relative",
-};
-
-const closeButtonStyle = {
-  position: "absolute",
-  top: "10px",
-  right: "10px",
-  background: "none",
-  border: "none",
-  fontSize: "20px",
-  cursor: "pointer",
-};
-
-const headerStyle = {
-  fontSize: "24px",
-  marginBottom: "10px",
-};
-
-const subHeaderStyle = {
-  fontSize: "14px",
-  color: "#666",
-  marginBottom: "20px",
-};
-
-const imageContainerStyle = {
-  marginBottom: "20px",
-};
-
-const imageStyle = {
-  width: "100%",
-  height: "200px",
-  objectFit: "cover",
-  borderRadius: "8px",
-};
-
-const priceStyle = {
-  fontSize: "24px",
-  fontWeight: "bold",
-  marginBottom: "20px",
-};
-
-const formStyle = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "10px",
-};
-
-const inputStyle = {
-  width: "100%",
-  padding: "10px",
-  border: "1px solid #ccc",
-  borderRadius: "4px",
-  fontSize: "16px",
-};
-
-const buttonStyle = {
-  width: "100%",
-  padding: "10px",
-  backgroundColor: "black",
-  color: "white",
-  border: "none",
-  borderRadius: "4px",
-  cursor: "pointer",
-  fontSize: "16px",
-};
-
-const loadingStyle = {
-  textAlign: "center",
-  padding: "20px",
-};
-
-const errorStyle = {
-  textAlign: "center",
-  color: "red",
-  padding: "20px",
 };
 
 export default RoomBookingForm;
