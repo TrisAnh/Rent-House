@@ -345,17 +345,6 @@ const BookingDetailsUser = () => {
                 )}
                 {booking.status === "Accepted" && (
                   <>
-                    <div className="contact-buttons">
-                      {booking.landlordInfo?.phone && (
-                        <a
-                          href={`tel:${booking.landlordInfo.phone}`}
-                          className="btn btn-contact"
-                        >
-                          <Phone className="icon" />
-                          Gọi chủ trọ
-                        </a>
-                      )}
-                    </div>
                     <p className="status-message success">✅ Đã được chấp nhận. Hãy liên hệ chủ trọ để xem phòng.</p>
                   </>
                 )}
